@@ -1,0 +1,91 @@
+
+  <h3>Layers</h3>
+  <p>
+    Could another use of "reusable groups" be to define layers?
+    The idea would be to build an image by defining a set of groups
+    (on the device) and then compose the final image by "layering" 
+    these groups (composing them with use.group()).
+  </p>
+  <p>
+    Possible applications are:
+    PDF slides with, e.g., a constant background
+    (that is complex but only needs defining once).
+    That would save on file size.
+    Animation on screen?  i.e., one layer is the backdrop (defined
+    on the device) and then for each animation frame, the
+    backdrop is reused and a new layer is composeed on top to animate
+    the scene. Would this actually be faster on, e.g., a Cairo
+    screen device, compared to drawing the whole scene (including 
+    backdrop) from scratch for each frame?
+  </p>
+  <p>
+    Added <code>clearGroups</code> argument to <code>grid.newpage()</code>
+    so that can retain group definitions across pages.
+  </p>
+  <p>
+    The example below actually works!
+    I have had to make the background artificially slow to draw.
+    The <code>grid.use()</code> is not blindingly fast,
+    but it is constant, so as the full draw gets slower, 
+    just reusing a defined group becomes faster.
+  </p>
+  <rcode eval="FALSE">
+## Create a 'lattice' plot grob
+## N <- nrow(mtcars)
+N <- 5
+library(lattice)
+library(grid)
+panel <- function(x, y, ...) {
+           panel.points(runif(100000, min(x), max(x)), 
+                        runif(100000, min(y), max(y)),
+                        col=rgb(0,0,0,.01))
+           panel.xyplot(x, y, ...)
+       }
+xyplot(mpg ~ disp, mtcars, panel=panel, pch=19)
+grob <- grid.grab()
+## Create a viewport that corresponds to the plot region
+downViewport("plot_01.panel.1.1.vp")
+cvp <- current.viewport()
+loc <- deviceLoc(unit(.5, "npc"), unit(.5, "npc"))
+dim <- deviceDim(unit(1, "npc"), unit(1, "npc"))
+panelvp <- viewport(loc$x, loc$y, dim$w, dim$h,
+                    xscale=cvp$xscale, yscale=cvp$yscale)
+addLabel <- function(i) {
+    pushViewport(panelvp)
+    grid.points(mtcars$disp[i], mtcars$mpg[i], pch=16, gp=gpar(col="red"))
+    grid.text(rownames(mtcars)[i], 
+              unit(mtcars$disp[i], "native") + unit(2, "mm"),
+              unit(mtcars$mpg[i], "native") + unit(2, "mm"),
+              just=c("left", "bottom"), gp=gpar(col="red"))
+}
+## Animation that redraws EVERYTHING
+f1 <- function() {
+    grid.newpage()
+    for (i in 1:N) {
+        dev.hold()
+        grid.newpage()
+        grid.draw(grob)
+        addLabel(i)
+        dev.flush()
+    }
+}
+## Animation that reuses main plot "layer"
+f2 <- function() {
+    grid.newpage()
+    grid.define(grob, name="bg")
+    for (i in 1:N) {
+        dev.hold()
+        grid.newpage(clearGroups=FALSE)
+        grid.use("bg")
+        addLabel(i)
+        dev.flush()
+    }
+}
+## Test
+graphics.off()
+x11()
+f1()
+x11()
+f2()
+  </rcode>
+

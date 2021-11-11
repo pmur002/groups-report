@@ -1,0 +1,2079 @@
+<?xml version="1.0" encoding="utf-8"?>
+<html>
+<head>
+  <style type="text/css">
+    @media print {
+      body { }
+      p.img { text-align: center; page-break-inside: avoid }
+      img.CC { display: inline }
+    }
+    @media screen {
+      body { max-width: 800px; margin: auto }
+      p.img { text-align: center }
+      img.CC { display: inline }
+    }
+    p.date {
+      font-size: smaller;
+      margin: 0;
+    }
+    p.versionHistory {
+      color: gray
+    }
+    p.versionHistory a {
+      color: gray
+    }
+    p.ref {
+      text-indent: -2em;
+      padding-left: 2em;
+    }
+    p.fig {
+      text-align: left;
+    }
+    p.fig img, img.plot {
+      box-shadow: 10px 10px 20px;
+      margin-top: 10px;
+      margin-bottom: 20px;      
+    }
+  </style>
+
+</head>
+<body>
+  <h1>Becoming an R Graphics Groupie:<br/>
+Groups, Compositing Operators, and Affine Transformations in R Graphics</h1>
+  <p>
+    <span style="font-style: italic">by Paul Murrell</span>
+    <a href="http://orcid.org"><img alt="" src="https://www.stat.auckland.ac.nz/~paul/ORCID/ORCiD.png" style="width: 16px; height: 16px; vertical-align: middle" /></a> <span style="font-family: mono; font-size: small"><a href="http://orcid.org/0000-0002-3224-8858">http://orcid.org/0000-0002-3224-8858</a></span>
+  </p>
+  <p class="date">
+    Version 1:  
+    <rcode echo="FALSE" results="asis">
+cat(format(Sys.Date(), "%A %d %B %Y"))
+    </rcode>
+  </p>
+
+  <rcode id="init" echo="FALSE" message="FALSE" results="hide">
+opts_chunk$set(comment=" ", tidy=FALSE, 
+               dev="png", ## dev="svg",
+               dpi=96)
+options(width=100)
+## For wonky desktop set up
+options(bitmapType="cairo")
+  </rcode>
+  <rcode echo="FALSE" message="FALSE">
+    library(grid)
+  </rcode>
+
+  <hr/>
+  <p>
+    <a rel="license"
+    href="http://creativecommons.org/licenses/by/4.0/"><img class="CC"
+    alt="Creative Commons License" style="border-width:0"
+    src="https://i.creativecommons.org/l/by/4.0/88x31.png"/></a><br/><span
+    xmlns:dct="http://purl.org/dc/terms/"
+    property="dct:title">This document</span>
+    by <span xmlns:cc="http://creativecommons.org/ns#"
+    property="cc:attributionName">Paul
+    Murrell</span> is licensed under a <a rel="license"
+    href="http://creativecommons.org/licenses/by/4.0/">Creative
+    Commons Attribution 4.0 International License</a>.
+  </p>
+  <hr/>
+  <p>
+    This document describes an expansion of the R graphics engine
+    to support a number of new graphical features:
+    isolated groups, compositing operators, and 
+    affine transformations. 
+  </p>
+  <p>
+    These features are available in the development version of R 
+    (to become version 4.2.0).
+  </p>
+  <p>
+    R users wanting to try out the new graphics features should start with
+    the <a href="#api"/> Section, which provides a quick introduction
+    to the new R-level interface.
+  </p>
+  <p>
+    Maintainers of R packages that provide R graphics devices should
+    read the <a href="#device"/> Section, which provides a description of the
+    required changes to R graphics devices. 
+  </p>
+  <p>
+    These new graphics features have not (yet) been implemented for
+    all of the graphics devices provided by the 'grDevices'
+    package. Devices that do support the new features are the 
+    <code>pdf()</code> graphics device and Cairo graphics devices:
+    <code>x11(type="cairo")</code>, <code>cairo_pdf()</code>,
+    <code>cairo_ps()</code>, <code>png(type="cairo")</code>,
+    <code>jpeg(type="cairo")</code>, <code>tiff(type="cairo")</code>, 
+    and <code>svg()</code>.
+    The remainder of the graphics
+    devices in 'grDevices' will run, but will (silently) not produce
+    the correct output. Graphics devices from other R packages should
+    be reinstalled and will not produce the correct output until
+    (or unless)
+    the package maintainer adds support.
+  </p>
+
+  <toc/>
+
+  <h2><a name="intro">Introduction</a></h2>
+
+  <p>
+    Changes to the graphics engine in R 4.1.0 added support for
+    gradient and pattern fills, clipping paths, and masks 
+    (<a href="#murrell-definitions-2020"/>).  
+    One way to think of those changes is that they
+    created an R interface to some of the more advanced graphical features
+    of specific R graphics devices - graphics devices that are based on 
+    sophisticated graphics systems, like the <code>pdf()</code> device
+    that is based on the Adobe Portable Document Format 
+    (<a href="#PDF"/>) and the graphics
+    devices based on the Cairo graphics library (<a href="#cairo"/>).
+    This document describes another step along that path, by adding 
+    an R interface to work with "groups" of graphical objects.
+  </p>
+  <p>
+    As a simple example of the increased sophistication provided by
+    the new features, consider the following code, which draws two opaque
+    filled circles that partially overlap each other 
+    on top of a piece of text (the text
+    is completely obscured).  
+  </p>
+  <rcode>
+library(grid)    
+  </rcode>
+  <rcode fig.width="2" fig.height="2">
+grid.text("background")
+c <- circleGrob(1:2/3, r=.3, gp=gpar(col=2:3, fill=2:3))
+grid.draw(c)
+  </rcode>
+  <p>
+    We will now draw the same circles (and text), but this time
+    in a viewport with a semitransparency mask.
+  </p>
+  <rcode fig.width="2" fig.height="2">
+grid.text("background")
+mask <- rectGrob(gp=gpar(col=NA, fill=rgb(0,0,0,.5)))
+pushViewport(viewport(mask=mask))
+grid.draw(c)
+  </rcode>
+  <p>
+    The result is that each circle is drawn with the mask applied,
+    so each circle becomes semitransparent.  The circles overlap
+    so we get a region where the first circle is partially visible 
+    beneath the second circle.  The text is also visible beneath
+    the circles.
+  </p>
+  <p>
+    Now consider the following code, which draws the circles, but this
+    time as a "group", again in a viewport with a semitransparency mask.
+  </p>
+  <rcode fig.width="2" fig.height="2">
+grid.text("background")
+pushViewport(viewport(mask=mask))
+grid.group(c)
+  </rcode>
+  <p>
+    The difference is that the opaque circles are drawn together first
+    as an isolated group,
+    with the green circle partially obscuring the red circle
+    (as in the original drawing),
+    and only then is the mask applied.  The mask has been applied 
+    to the result of drawing the group of circles rather than
+    being applied to each circle as it is drawn.
+    The text is again visible beneath the circles to show that 
+    the area of intersection between the circles is only
+    the green circle made semitransparent.
+  </p>
+  <p>
+    This captures the essence of the new graphics features that are
+    provided in this report:  we get to draw a group of objects 
+    in isolation before adding the group to the overall image.
+  </p>
+  <p>
+    The image below provides a more dramatic demonstration.
+    Here we have a 'ggplot2' 
+    plot (<a href="#pkg:ggplot2"/>) treated as an isolated group.  
+    The group has been drawn twice:  once 
+    as it would appear normally (upright)
+    and once with 
+    a shear transformation applied 
+    (to give the impression of a shadow that is cast by the plot).
+    This hints at the fact that, once we have defined a group of 
+    shapes in isolation, there are a number of new effects that
+    we can achieve.  The code for the image below will be 
+    shown <a href="#ggplot">later</a> 
+    once we have a better idea of how the new graphics
+    functions work.
+  </p>
+  <rcode echo="FALSE" fig.width="8" fig.height="5">
+library(ggplot2)
+grid.newpage()
+pushViewport(viewport(x=0, y=0, width=.6, 
+                      just=c("left", "bottom")))
+gg <- ggplot(mtcars) +
+    geom_point(aes(disp, mpg)) +
+    theme_bw() +
+    theme(panel.background=element_rect(color=NA, fill="transparent"),
+          plot.background=element_rect(color=NA, fill="transparent"))
+g <- editGrob(grid.grabExpr(plot(gg), gp=gpar(lex=2)))
+grid.define(g, name="g")
+trans <- function(group, ...) {
+    viewportTransform(group, shear=groupShear(2, 0))
+}
+pushViewport(viewport(x=0, y=0, height=1/4, just=c("left", "bottom"),
+                      mask=rectGrob(width=2, 
+                                    gp=gpar(col=NA, fill=rgb(0,0,0,.7)))))
+grid.use("g", transform=trans)
+popViewport()
+grid.draw(g)    
+  </rcode>
+  <p>
+    The <a href="#api"/> Section provides simple examples that
+    demonstrate all of the new user-level
+    features and demonstrate some of the effects that
+    can be obtained from them.
+  </p>
+  <p>
+    The Section <a href="#userdetails"/> goes into more detail
+    about how the new user-level functions work.
+    This is not necessary for simple usage, but there are 
+    useful details for more sophisticated use of the new features.
+  </p>
+  <p>
+    The new features are only implemented on a few of the standard
+    R graphics devices so far (the <code>pdf()</code> device and
+    the devices based on the Cairo graphics system);  the 
+    <a href="#device"/> Section describes the interface that
+    graphics devices must implement if they want to support these
+    features.
+  </p>
+  <p>
+    The simple overlapping-circles 
+    examples above are representative of most examples
+    in this report;  they are simple demonstrations of graphical
+    features, with no obvious connection to data visualisation.
+    The main
+    motivation for adding the new features to the R graphics
+    engine is to reduce the need for users to have to manually tweak 
+    R graphics output in other systems like Adobe Illustrator.
+    In other words, the aim of these changes is to encourage
+    users to generate graphical output entirely in code,
+    with all of the benefits of reproducibility, sharing, version control
+    etc that come with working entirely in code.
+    Direct applications of these features to
+    data visualisation will hopefully follow as users and
+    developers experiment with the new possibilities.
+  </p>
+  <p>
+  </p>
+
+  <h2><a name="api">User API</a></h2>
+  <p>
+    The first new function to describe is the <code>grid.group()</code>
+    function.  As shown in the <a href="#intro"/>, this function
+    takes a 'grid' grob, renders it in isolation, and then
+    combines it with the main image.
+  </p>
+  <p>
+    The isolated drawing can be arbitrarily complex,
+    involving multiple grobs and viewports, by providing a gTree
+    as the first argument.  For example, the following code
+    draws a rectangle and a circle as a group.
+  </p>
+  <rcode fig.width="2" fig.height="2">
+r <- rectGrob(1/3, 2/3, width=.5, height=.5, gp=gpar(fill="black"))
+c <- circleGrob(2/3, 1/3, r=.3, gp=gpar(fill="black"))
+gt <- gTree(children=gList(r, c))
+grid.group(gt)
+  </rcode>
+  <p>
+    The following code draws the entire gTree from a 'ggplot2'
+    plot as a group.
+  </p>
+  <rcode>
+library(ggplot2)
+  </rcode>
+  <rcode fig.width="4" fig.height="4">
+gg <- ggplotGrob(ggplot(mtcars) + geom_point(aes(disp, mpg)))
+grid.group(gg)
+  </rcode>
+  <p>
+    The above results are exactly the same as the results we would get
+    by just drawing the grobs normally, as the code below shows for the simple 
+    rectangle-plus-circle example.
+  </p>
+  <rcode fig.width="2" fig.height="2">
+grid.draw(gt)
+  </rcode>
+  <p>
+    We get the same result in the examples above because, 
+    when we draw the shapes as a group, we begin with a temporary
+    transparent canvas, we draw the group on this temporary canvas, and then
+    the result is drawn on top of any previous drawing in the main image
+    However, there are several ways in which we can vary that situation.
+  </p>
+  <h3>Masking</h3>
+  <p>
+    If we enforce a mask (in the main image), the results of drawing normally
+    and drawing as a group are no longer the same.  This was the first
+    example shown in the introduction.  
+    The code below repeats the example with the rectangle and circle,
+    but now with a mask in place.  Some text is drawn in the background
+    so that we can more easily see the transparency of the shapes.
+  </p>
+  <p>
+    First we draw normally.  The text is drawn in the background,
+    then we push a viewport that enforces a semitransparent mask.
+    The rectangle is drawn and, because of the mask, it is semitransparent,
+    so we can see the text beneath it.
+    Then the circle is drawn and it is also semitransparent, so we can
+    see the text beneath it and,
+    where the circle and the rectangle overlap,
+    we can also see the rectangle beneath the cirlce.
+  </p>
+  <rcode fig.width="2" fig.height="2">
+grid.text("background")
+pushViewport(viewport(mask=mask))
+grid.draw(gt)
+  </rcode>
+  <p>
+    Now we draw the shapes as a group.
+    As before, the text is drawn and a viewport is pushed to enforce
+    a mask.
+    However, the rectangle and circle are now drawn as an isolated group,
+    as a separate step.  The result of drawing the rectangle and circle    
+    is then added to the main image, with the mask now in effect,
+    so we get the result of drawing the rectangle and circle with no mask
+    (the opaque union of the rectangle and circle) added to the main
+    image using a mask, which produces a semitransparent union of the
+    rectangle and circle.
+    We can see the text beneath, but there is no visible overlap 
+    between the rectangle and circle.
+  </p>
+  <rcode fig.width="2" fig.height="2">
+grid.text("background")
+pushViewport(viewport(mask=mask))
+grid.group(gt)
+  </rcode>
+
+  <h3>Compositing and blend modes</h3>
+  <p>
+    Another way that we can get a different result from drawing shapes
+    in a group is that we can vary how shapes are drawn on top of each
+    other (in the group).  
+  </p>
+  <p>
+    By default, each new shape is drawn on top of any previous drawing,
+    with the new shape obscuring previous drawing where there is any
+    overlap.  The <code>grid.group()</code>
+    function has two further arguments, <code>op</code> and <code>dst</code>
+    (the first argument is called <code>src</code>),
+    which allow us to combine new shapes with previous shapes in 
+    a variety of ways.
+    The <code>dst</code> argument is a 'grid' grob (like the 
+    <code>src</code> argument) and this is drawn first.
+    The <code>op</code> argument selects a "compositing operator" 
+    and this specifies how the <code>src</code> grob is combined with
+    the <code>dst</code>.  The default <code>op</code> value is 
+    <code>"over"</code>.
+  </p>
+  <p>
+    The following code uses the same
+    simple shapes in the group as before (a rectangle and a circle),
+    but now, within the group, we draw the rectangle first 
+    (as <code>dst</code>) 
+    and then the circle (as <code>src</code>), 
+    using a <code>"clear"</code> operator.
+    With this operator, the new shape "clears" the previous drawing
+    wherever there is an overlap.  In this case, 
+    drawing the circle over the rectangle takes a bite out of
+    the bottom-right corner of
+    the rectangle.  With the <code>"clear"</code> operator, 
+    the <code>src</code> is not drawn at all.
+  </p>
+  <rcode fig.width="2" fig.height="2">
+grid.group(c, "clear", r)
+  </rcode>
+  <p>
+    By default, the <code>dst</code> is a fully transparent rectangle,
+    but we can easily specify a different "backdrop" for a group.
+    The following code specifies a grey filled rectangle as the
+    <code>dst</code> and then draws the gTree consisting of the
+    rectangle and the circle on top, using a <code>"clear"</code>
+    operator.  The result is a hole punched in the grey rectangle
+    based on the black rectangle and the black circle.
+    To show that the result of drawing this group is NOT the
+    same as drawing a white rectangle and a white circle on top
+    of the grey rectangle, we first drew some text in the main image;
+    when the group is drawn on top of the main image we can see
+    the text through the hole that the rectangle and circle
+    have punched in the grey rectangle.
+  </p>
+  <rcode fig.width="2" fig.height="2">
+grid.text("reveal", gp=gpar(cex=4))
+grid.group(gt, "clear", rectGrob(gp=gpar(col= NA, fill="grey")))
+  </rcode>
+  <p>
+    All of the <a href="https://cairographics.org/operators/">compositing 
+    operators supported by the Cairo 
+    graphics system</a> are provided
+    (including the standard Porter-Duff operators; 
+    <a href="#10.1145/800031.808606"/>), 
+    but only a subset of these are
+    supported on the PDF graphics device.  In the PDF language,
+    the compositing operators are called "blend modes";  the default
+    <code>"over"</code> operator corresponds to "Normal" blend mode
+    and several other operators correspond to 
+    <a href="https://www.adobe.com/content/dam/acom/en/devnet/pdf/pdfs/pdf_reference_archives/PDFReference.pdf#%5B%7B%22num%22%3A559%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C130%2C572%2Cnull%5D">the other PDF blend modes</a>,
+    but the <code>"clear"</code> operator, for example, has no 
+    corresponding blend mode.  Where there is no correspondence,
+    the PDF device falls back to "Normal" blend mode.
+  </p>
+  <p>
+    The full list of available operators are shown below.
+  </p>
+  <rcode echo="FALSE">
+grid:::compositingOperators
+  </rcode>
+  
+  <h3>Reusable groups</h3>
+  <p>
+    In addition to <code>grid.group()</code>, there are two other
+    new functions:  <code>grid.define()</code> and <code>grid.use()</code>.
+    The purpose of these functions is to separate the definition of
+    a group from its use.  This allows us to reuse a group multiple times
+    from a single definition.
+  </p>
+  <p>
+    As an example, the following code defines a group consisting
+    of a circle and a rectangular, similar to the
+    one we have been using, but smaller. 
+  </p>
+  <rcode>
+r2 <- rectGrob(width=unit(1, "cm"), height=unit(1, "cm"),
+               hjust=.75, vjust=.25,
+               just=c("right", "bottom"),
+               gp=gpar(fill="black"))
+c2 <- circleGrob(x=unit(.5, "npc") + unit(.5, "cm"),
+                 y=unit(.5, "npc") - unit(.5, "cm"),
+                 r=unit(.67, "cm"),
+                 gp=gpar(fill="black"))
+gt2 <- gTree(children=gList(r2, c2))    
+  </rcode>
+  <rcode fig.width="2" fig.height="2">
+grid.group(gt2)
+  </rcode>  
+  <p>
+    In the following code, we first call <code>grid.define()</code>
+    to define the group and give it a name, <code>"group1"</code>.
+    This does not draw the group, it just defines the group
+    on the graphics device.
+    We then call <code>grid.use()</code> with the name of the group
+    we want to use, and this draws the group.
+    This produces the drawing in the centre of the page, just like
+    <code>grid.group()</code> did and 
+    demonstrates that <code>grid.group()</code> is really 
+    just a wrapper for <code>grid.define()</code> and 
+    <code>grid.use()</code>.
+  </p>
+  <p>
+    The interesting part happens next.  We push a viewport in a 
+    different location on the page (the bottom-left corner)
+    and call <code>grid.use()</code>
+    again.  This draws the group in a different location on the page.
+    Then we repeat the dose to draw the group in yet another location
+    (the top-right corner).
+  </p>
+  <rcode fig.width="2" fig.height="2">
+grid.define(gt2, name="group1")
+grid.use("group1")
+pushViewport(viewport(.25, .25, gp=gpar(col=2)))
+grid.use("group1")
+popViewport()
+pushViewport(viewport(.75, .75, gp=gpar(col=3)))
+grid.use("group1")
+popViewport()
+  </rcode>
+  <p>
+    One potential benefit of this feature is efficiency on the graphics
+    device.  For example, the PDF device records the group definition 
+    only once and then can just refer to the definition every time
+    the group is drawn.
+  </p>
+  <p>
+    A more interesting detail about the example above is that the
+    <code>grid.use</code> calls are applying a translation to
+    the group to redraw it in different locations on the page.
+    This opens up a whole new world of possibilities.
+  </p>
+
+  <h3>Affine transformations</h3>
+  <p>
+    The following code performs the same two initial steps as the last
+    example:  we define a group and the use it.  This draws the
+    group in the centre of the page.
+    However, the next step is  different.  Here we push a viewport
+    that is in the bottom-left corner of the page <em>and</em> is smaller
+    than the original viewport that we defined the group in.
+    This difference in both viewport location <em>and</em> 
+    size induces both a translation due to
+    the different location of the viewport <em>and</em> a scaling transformation
+    due to the different size of the viewport.
+    The result is that the original group is drawn scaled down 
+    (and translated).
+    The final step demonstrates the scaling more dramatically.
+    This time we have a viewport at a different location (top-right)
+    and with a different size <em>and</em> with a different aspect ratio
+    (twice as wide as it is high).  The result is that the original
+    group is drawn scaled and distorted (the circle has become an ellipse).
+  </p>
+  <rcode fig.width="2" fig.height="2">
+grid.define(gt2, name="group1")
+grid.use("group1")
+pushViewport(viewport(.25, .25, width=.5, height=.5))
+grid.use("group1")
+popViewport()
+pushViewport(viewport(.75, .75, height=.5))
+grid.use("group1")
+popViewport()
+  </rcode>
+  <p>
+    It is important to note that these transformations are different
+    from what would normally happen when we draw 'grid' objects.
+    The transformations are happening on the device rather than in 'grid'.
+    The following code is identical to the code above except that
+    it calls <code>grid.draw()</code>, which draws the grob <code>gt2</code>
+    normally, rather than <code>grid.use()</code>, which draws the group
+    "group1" that was defined based on the grob <code>gt2</code>.  
+    When we draw
+    <code>gt2</code> normally, it remains the same size, regardless
+    of which viewport we draw it in, because
+    the width and height of the rectangle and the radius of the
+    circle were specified in absolute units (cm).  
+  </p>
+  <rcode fig.width="2" fig.height="2">
+grid.define(gt2, name="group1")
+grid.draw(gt2)
+pushViewport(viewport(.25, .25, width=.5, height=.5))
+grid.draw(gt2)
+popViewport()
+pushViewport(viewport(.75, .75, height=.5))
+grid.draw(gt2)
+popViewport()
+  </rcode>
+  <p>
+    The behaviour of affine transformations is explored in more detail
+    in the next section, along with several other aspects of 
+    drawing groups.
+  </p>
+
+  <h2><a name="userdetails">Exploring the new features</a></h2>
+  <p>
+    This section goes into further detail about how the 
+    new graphics engine features work.  It is not necessary
+    for basic usage, but is required to achieve more
+    complex results and may be helpful to understand the output
+    when an unexpected result occurs.
+  </p>
+  
+  <h3>Group names and persistence</h3>
+  <p>
+    When we define a group with <code>grid.define()</code>, 
+    we give it a name, which we can then use
+    to refer to the group in a call to <code>grid.use()</code>.
+    These names are unique per device.
+  </p>
+  <p>
+    If we define a new group with the same name as an existing
+    group, the new group replaces the old group.  For example,
+    the following code defines a group called <code>"a"</code>
+    based on a rectangle, then defines another group called 
+    <code>"a"</code> based on a circle.  When we subsequently
+    use the group
+    called <code>"a"</code>, the result is a circle.
+  </p>
+  <rcode fig.width="2" fig.height="2">
+grid.define(rectGrob(), name="a")
+grid.define(circleGrob(), name="a")
+grid.use("a")
+  </rcode>
+  <p>
+    Group definitions are usually erased at the start of a new page.
+    However, the <code>grid.newpage()</code> function has a 
+    <code>clearGroups</code> argument.  If that is set to <code>FALSE</code>
+    then a group can be defined on one page and reused on another page.
+  </p>
+
+  <h3>Graphical parameter settings</h3>
+  <p>
+    The grobs within a group may specify some explicit graphical
+    parameter settings and the group will inherit 
+    graphical parameter settings from the context in which
+    the group is defined.
+    However, both explicit and inherited
+    settings are then fixed for any use of the group.
+  </p>
+  <!--
+  <p>
+    Graphical parameter settings are recorded when the group is
+    defined (so are fixed for re-use).  Had to take this approach
+    (even though PDF could handle different approach that allows
+    re-use to inherit settings from re-use context) because Cairo
+    could only support this approach (because the definition 
+    is captured by a push_group and is therefore fixed output).
+  </p>
+  -->
+  <p>
+    For example, in the code below, we first push a viewport
+    (on the left)
+    that has an explicit line width (2) and 
+    colour (red).  We draw a rectangle with no explicit graphical 
+    parameter settings to show that, in normal 'grid' drawing,
+    the settings from the viewport provide defaults for any drawing
+    within the viewport;  the rectangle is drawn with a thin red border.
+    Within the same viewport, we also define a group based on a
+    circle with an explicit line width setting (5).
+    This group ignores the line width default, because it has its
+    own explicit line width, but inherits the default colour red.
+    When we then use the group, we get a (thick) red circle.
+    Next, we push
+    a new viewport (on the right) 
+    with green as the default colour and a thicker default line width (5).
+    As before, when we draw a rectangle with no explicit graphical
+    parameter settings, it uses the defaults from the viewport,
+    and we get a thick green rectangle.
+    However, when we reuse the group
+    within this viewport,
+    the circle retains the (explicit) line width and the
+    (inherited) colour from when it was 
+    defined and we still get a (thick) red circle.
+  </p>
+  <rcode fig.width="2" fig.height="1">
+pushViewport(viewport(x=1/4, width=.5, gp=gpar(lwd=2, col=2)))
+grid.rect(width=.9, height=.9)
+grid.define(circleGrob(r=.3), name="c", gp=gpar(lwd=5))
+grid.use("c")
+popViewport()
+pushViewport(viewport(x=3/4, width=.5, gp=gpar(col="green")))
+grid.rect(width=.9, height=.9, gp=gpar(lwd=5))
+grid.use("c")
+popViewport()    
+  </rcode>
+
+  <h3>Compositing and blend modes</h3>
+  <p>
+    The examples in the <a href="#api"/> Section involved only
+    compositing single shapes.  This section looks at some 
+    subtleties about how groups behave when <code>src</code>
+    and/or <code>dst</code> consist of more than one shape.
+  </p>
+  <p>
+    In simple terms, group drawing works by drawing <code>dst</code>,
+    if it is not <code>NULL</code>, then setting the compositing
+    operator, <code>op</code>, then drawing <code>src</code>.
+    The result of all of that drawing is then combined with the
+    main image.
+    An important detail about group drawing is that the compositing
+    operator <code>op</code> 
+    is in effect for all of the drawing of <code>src</code>.
+    Another detail is that the default "over" operator is in effect
+    for all of the drawing of <code>dst</code>.
+    These details become apparent when <code>src</code> and/or
+    <code>dst</code> consist of 
+    more than one shape.
+  </p>
+  <p>
+    For example, the following code draws a group, using the
+    "xor" compositing operator, where both
+    the <code>src</code> and <code>dst</code> consist of
+    two overlapping circles.  The <code>src</code> circles
+    are both filled red and the <code>dst</code> circles
+    are both filled green.
+    The circles are positioned in this example so that 
+    drawing proceeds from
+    left to right across the image.
+    The left green circle is drawn
+    first and then the right green circle is drawn on top using 
+    the default "over" operator.  The compositing operator
+    is then set to "xor" and the left red circle is drawn.
+    This results in a gap where the right green circle and the 
+    left red circle overlap.  Finally, the right red circle
+    is drawn.  The "xor" operator is still in effect, so the
+    result is a gap where the left red circle and the right
+    red circle overlap.
+  </p>
+  <rcode fig.width="3" fig.height="2">
+src <- circleGrob(3:4/5, r=.2, gp=gpar(col=NA, fill=2))
+dst <- circleGrob(1:2/5, r=.2, gp=gpar(col=NA, fill=3))
+grid.group(src, "xor", dst)
+  </rcode>
+  <p>
+    The following code shows how we can isolate <code>src</code>
+    so that the two red circles are combined using the default
+    "over" operator before that result is then combined with 
+    <code>dst</code> using the "xor" operator.  This is precisely what
+    groups allow us to do.  The result is only a gap where
+    <code>src</code> and <code>dst</code> overlap.
+  </p>
+  <rcode fig.width="3" fig.height="2">
+grid.group(groupGrob(src), "xor", dst)
+  </rcode>
+  <p>
+    The following code demonstrates that the <code>op</code>
+    operator is in effect even when <code>dst</code> is <code>NULL</code>.
+    Here we only draw a <code>src</code>, but it consists of 
+    two overlapping circles, and the operator is "xor", so
+    the second circle is "xor"ed with the first circle.
+  </p>
+  <rcode fig.width="3" fig.height="2">
+grid.group(src, "xor")
+  </rcode>
+  
+  <h3>Combining graphics features</h3>
+  <p>
+    The <a href="#api"/> Section described how groups can be used
+    to produce a different result when a mask is in effect. 
+    This section looks at other combinations of groups with
+    patterns and masks.
+  </p>
+  <!--
+    Interaction of compositing groups and soft masks.
+    In <a href="https://www.adobe.com/content/dam/acom/en/devnet/pdf/pdfs/pdf_reference_archives/PDFReference.pdf">PDF</a>:
+
+    "Before execution of the transparency group XObject's content
+    stream, the current blend mode in the graphics state is
+    initialized to Normal, the current stroking and nonstroking alpha
+    constants to 1.0, and the current soft mask to None."
+
+    This allows us to compose objects with no mask and then apply
+    a mask to the composited whole.
+  -->
+
+  <p>
+    The following code shows that a group can be the basis for a 
+    tiling pattern.  We create a group that combines a rotated rectangle
+    on a black circle using the "clear" operator (creating a diamond-shaped
+    hole in the circle) and then use that group as a repeating pattern to fill
+    a rectangle.  A red horizontal line is drawn first to illustrate that
+    the diamond shape is a hole in the circle, not a white diamond
+    drawn on top of the circle.
+  </p>
+  <rcode fig.width="2" fig.height="2">
+gp <- groupGrob(rectGrob(width=.1, height=.1, gp=gpar(fill="black"),
+                         vp=viewport(angle=45)),
+                "clear",
+                circleGrob(r=.1, gp=gpar(fill="black")))
+pat <- pattern(gp, width=.25, height=.25, extend="repeat")
+grid.segments(y0=.5, y1=.5, gp=gpar(col=2, lwd=15))
+grid.rect(width=.8, height=.8, gp=gpar(fill=pat))                
+  </rcode>
+  <p>
+    The following code shows that a group can also be the basis for a mask.
+    We create a group that combines a semitransparent circle on a 
+    semitransparent rectangle, where the circle is more translucent than
+    the rectangle. The group uses
+    the "source" operator so that, where the circle
+    and the rectangle overlap, only the circle is drawn.
+    This produces a semitransparent rectangle with a more translucent 
+    circle in its centre.  We push a viewport with this group as the mask
+    and draw a series of thick, horizontal, green lines with the result
+    that the 
+    semitransparency of the mask is transferred to the lines.
+    A red diagonal line is drawn first to illustrate that the green lines
+    are semitransparent.
+  </p>
+  <rcode fig.width="2" fig.height="2">
+gp <- groupGrob(circleGrob(r=.3, gp=gpar(col=NA, fill=rgb(0,0,0,.3))),
+                "source",
+                rectGrob(gp=gpar(fill=rgb(0,0,0,.7))))
+grid.segments(gp=gpar(col=2, lwd=20))
+pushViewport(viewport(mask=gp))
+grid.segments(0, 1:4/5, 1, 1:4/5, gp=gpar(col=3, lwd=20))
+  </rcode>
+
+  <h3>Affine transformations</h3>
+  <p>
+    As hinted at in the <a href="#api"/> Section above, group affine
+    transformations work quite differently to the "normal"
+    'grid' transformations - the transformations that occur as a result of 
+    pushing 'grid' viewports and 
+    using the <code>unit()</code> function to associate locations
+    and dimensions with different coordinate systems within the
+    current viewport.  The following code and output attempts to
+    contrast the behaviour of groups with normal 'grid' behaviour.
+  </p>
+  <p>
+    We begin by defining some 'grid' grobs:
+    a rectangle that has an absolute width (specified in inches);
+    a rectangle that has a relative width (specified in
+    <code>"npc"</code> coordinates);
+    and a text label.
+    We also define two 'grid' gTree objects, each of which
+    contains one of the rectangles plus the text label.
+  </p>
+  <rcode>
+r1 <- rectGrob(width=unit(.48, "in"), height=.6, gp=gpar(lwd=5))
+r2 <- rectGrob(width=unit(.6, "npc"), height=.6, gp=gpar(lwd=5))
+t <- textGrob("test")
+gt1 <- gTree(children=gList(r1, t))
+gt2 <- gTree(children=gList(r2, t))
+  </rcode>
+  <p>
+    The following code draws the first gTree normally,
+    once in a square viewport and once in a wider 
+    viewport (as indicated by the dotted lines).  
+    The size of the rectangle does not change
+    because its width is absolute.  In more detail, the
+    width of the rectangle, <code>unit(.48, "in")</code>,
+    is evaluated when the rectangle is drawn and the result
+    is the same in both viewports because .48in is the
+    same regardless of the size of the viewport.
+  </p>
+  <p>
+    The text remains the same because it is drawn in the centre
+    of the viewport and its size is absolute (12pt).
+  </p>
+  <rcode fig.width="4" fig.height="1">
+grid.newpage()
+pushViewport(viewport(x=1/4, width=.2, height=.8))
+grid.rect(gp=gpar(lty="dotted"))
+grid.draw(gt1)
+popViewport()
+pushViewport(viewport(x=3/4, width=.4, height=.8))
+grid.rect(gp=gpar(lty="dotted"))
+grid.draw(gt1)
+popViewport()
+  </rcode>
+  <p>
+    The next code draws the second gTree normally, 
+    again in both a square viewport and a wider viewport.
+    This time, because the width of the rectangle is
+    relative, the rectangle is wider when it is drawn
+    in the wider viewport;  .6npc means 60% of the 
+    width of the parent viewport.
+    The text is unchanged because its height (and width)
+    are absolute.
+  </p>
+  <rcode fig.width="4" fig.height="1">
+pushViewport(viewport(x=1/4, width=.2, height=.8))
+grid.rect(gp=gpar(lty="dotted"))
+grid.draw(gt2)
+popViewport()
+pushViewport(viewport(x=3/4, width=.4, height=.8))
+grid.rect(gp=gpar(lty="dotted"))
+grid.draw(gt2)
+popViewport()
+  </rcode>
+  <p>
+    The next code demonstrates the different behaviour of group
+    affine transformations.
+    In the square viewport, we define a group based on the first
+    gTree and draw (use) that group.  This produces the same 
+    output as normal 'grid' drawing.
+    In the wider rectangle, when we draw (reuse) the group,
+    the difference between the square viewport (where the group
+    was defined) and the wider viewport (where the group is 
+    being used) induces a transformation. The transformation
+    includes a translation, because the wider viewport is to the
+    right of the square viewport, and a scaling, because the
+    wider viewport is wider than the square viewport.
+    However, this transformation applies to everything that we
+    draw:  the rectangle is not only wider, but the lines 
+    that are used to draw the vertical sides of the rectangle
+    are <emph>thicker</emph>.
+    Furthermore, the text is stretched horizontally because
+    of the scaling applied by the transformation.
+  </p>
+  <rcode fig.width="4" fig.height="1">
+pushViewport(viewport(x=1/4, width=.2, height=.8))
+grid.rect(gp=gpar(lty="dotted"))
+grid.define(gt1, name="group")
+grid.use("group")
+popViewport()
+pushViewport(viewport(x=3/4, width=.4, height=.8))
+grid.rect(gp=gpar(lty="dotted"))
+grid.use("group")
+popViewport()
+  </rcode>
+  <p>
+    The "normal" 'grid' behaviour is useful because we do not,
+    for example,
+    usually want text to be distorted.  However,
+    the affine transformations that we get by reusing groups
+    can be harnessed to achieve some useful effects.
+    For example, the following code demonstrates that
+    we can use affine transformations to fill a non-square region with 
+    a radial gradient.  The main idea is that we define the gradient within
+    a square region, but use it in a rectangular region.  The result
+    on the right is the image that we want to achieve and the result
+    on the left is just for illustrative purposes.  We do not need
+    to <em>use</em> the gradient in the square region;  we just need to 
+    <em>define</em>
+    the gradient in the square region.
+  </p>
+  <rcode fig.width="4" fig.height="1">
+grad <- radialGradient(c("white", "black"))
+r <- rectGrob(width=.6, height=.6, gp=gpar(col=NA, fill=grad))
+pushViewport(viewport(x=1/4, width=.2, height=.8))
+grid.rect(gp=gpar(lty="dotted"))
+grid.define(r, name="rect")
+grid.use("rect")
+popViewport()
+pushViewport(viewport(x=3/4, width=.4, height=.8))
+grid.rect(gp=gpar(lty="dotted"))
+grid.use("rect")
+popViewport()
+  </rcode>
+  <p>
+    Another issue that requires more explanation is the precise 
+    transformation that is induced by defining a group within
+    one viewport and using the group within a different
+    viewport.  There are three aspects to consider:  differences in
+    viewport location, which induce a translation;  differences in 
+    viewport size, which induce a scaling; and differences in 
+    viewport angle, which induce a rotation.
+  </p>
+  <p>
+    The first point is that the translation induced by a viewport
+    is based on the (x, y) location of the viewport.
+    In all previous examples, we have used viewports that are
+    centred on their (x, y) location, but that does not have to be the
+    case.  For example, in the code below, we define a black rectangle
+    within a viewport that is centred on (.5, .5)
+    (and we draw the rectangle to show where it would appear if
+    it was used within the same viewport), 
+    but we then use the black rectangle within a 
+    viewport that is bottom-left justified at (.25, .25).
+    Both viewports have a width and height of .5, so they occupy the
+    same region within the image (indicated by the dotted line),
+    but the difference in the (x, y) location of the viewports
+    (centre of the dotted region versus bottom-left of the dotted region)
+    induces a translation and the reuse
+    of the black rectangle draws it at a different location (the
+    bottom-left of the dotted region, which is where it is used, instead of the 
+    centre of the dotted region, which is where it was defined).
+  </p>
+  <rcode fig.width="2" fig.height="2">
+pushViewport(viewport(width=.5, height=.5))
+grid.rect(gp=gpar(lty="dotted"))
+grid.define(rectGrob(width=.2, height=.2, gp=gpar(fill="black")),
+            name="r")
+grid.use("r")
+popViewport()
+pushViewport(viewport(x=.25, y=.25, width=.5, height=.5, 
+                      just=c("left", "bottom")))
+grid.use("r")
+popViewport()
+  </rcode>
+  <p>
+    The translation is induced this way because it makes it easier
+    to position the reuse of a group relative to a specific location
+    using a justification other than "centred".
+    For example, the following code defines a black rectangle 
+    bottom-left justified at
+    the bottom-left corner of a viewport that is bottom-left
+    justified at (.5, .5).
+    We then use the rectangle within a viewport that is bottom-left
+    justified at (.25, .25).
+    This provides accurate control of the placement of the bottom-left 
+    corner of the group.
+    (The previous example provided accurate control of the
+    placement of the <em>centre</em> of the group.)
+  </p>
+  <rcode fig.width="2" fig.height="2">
+pushViewport(viewport(.5, .5, just=c("left", "bottom"),
+                      width=.5, height=.5))
+grid.rect(gp=gpar(lty="dotted", fill=NA))
+grid.define(rectGrob(0, 0, just=c("left", "bottom"),
+                     width=.2, height=.2,
+                     gp=gpar(fill="black")),
+            name="r")
+grid.use("r")
+popViewport()
+pushViewport(viewport(.25, .25, just=c("left", "bottom"),
+                      width=.5, height=.5))
+grid.rect(gp=gpar(lty="dotted", fill=NA))
+grid.use("r")
+popViewport()
+  </rcode>
+  <p>
+    The scaling and rotation transformations that are induced by
+    differences in viewport size and angle are more straightforward,
+    though it is worth pointing out that the differences
+    in viewport size are differences in <em>absolute</em> size
+    (in inches) and take no notice of the viewport scales.
+  </p>
+  <p>
+    It is also worth pointing out that the overall transformation
+    that is induced by differences between viewports may involve
+    a combination of translation, scaling, and/or rotation.
+    The overall transformation is calculated by a translation from
+    the original location (where the group was defined) to
+    the origin (0, 0), followed by scaling, rotation, and then translation 
+    to the new location (where the group is to be used).
+  </p>
+  
+  <h3>Custom transformations</h3>
+  <p>
+    Because the transformation is only dependent on differences in
+    viewport location, size, and angle, it is not possible to
+    induce the full range of affine transformations.
+    For example, although we can distort a group, by applying
+    a different amount of scaling in the x-direction compared to
+    the y-direction, we cannot induce a <em>shear</em> transformation.
+    However, the <code>transform</code> argument to the 
+    <code>grid.use()</code> function allows us to customise
+    the transformation that will occur.
+  </p>
+  <p>
+    The <code>transform</code> argument must be a function that
+    takes the group as an argument and
+    returns a 3x3 affine transformation matrix.  
+    In theory, we can provide
+    any function that returns a 3x3 matrix, but generating a 
+    meaningful transformation matrix requires a good understanding
+    of affine transformations and 'grid' internals.
+    Several predefined
+    functions are provided to make it easier to generate a custom
+    transformation.
+  </p>
+  <p>
+    The default value of <code>transform</code> is the 
+    <code>viewportTransform()</code> function.  This function
+    automatically generates a transformation matrix based on the
+    difference between the viewport where the group was defined
+    and the viewport where the group is being used.
+  </p>
+  <p>
+    A simple customisation that we can perform is to use the <code>shear</code>
+    argument to <code>viewportTransform()</code>.
+    This allows us to specify a 3x3 matrix that describes a shear transform.
+    A shear transformation is described by two parameters: the amount of shear
+    in the x-direction and the amount of shear in the y-direction.
+    The <code>groupShear()</code> function is provided to generate a matrix
+    from just two values.  For example, the following code
+    defines a group in a viewport in the bottom-left corner of the image
+    then reuses it in three viewports in
+    each of the other three corners of the image.
+    The different locations of the viewports induce a translation,
+    but also we specify a custom <code>transform</code> in each reuse
+    that is a function that adds a <code>shear</code> to the 
+    default viewport transformation.  This results in different
+    shear transformations of the rectangle (in addition to the
+    default translations).
+  </p>
+  <rcode fig.width="3" fig.height="3">
+pushViewport(viewport(.25, .25, width=.4, height=.4))
+grid.rect(gp=gpar(lty="dotted"))
+grid.define(rectGrob(width=.2, height=.2, gp=gpar(fill="black")),
+            name="r")
+grid.use("r")
+popViewport()
+pushViewport(viewport(.75, .25, width=.4, height=.4))
+grid.rect(gp=gpar(lty="dotted"))
+grid.use("r", trans=function(g) viewportTransform(g, 
+                                                  shear=groupShear(sx=.5, sy=0)))
+popViewport()
+pushViewport(viewport(.25, .75, width=.4, height=.4))
+grid.rect(gp=gpar(lty="dotted"))
+grid.use("r", trans=function(g) viewportTransform(g, 
+                                                  shear=groupShear(sx=0, sy=.5)))
+popViewport()
+pushViewport(viewport(.75, .75, width=.4, height=.4))
+grid.rect(gp=gpar(lty="dotted"))
+grid.use("r", trans=function(g) viewportTransform(g, 
+                                                  shear=groupShear(sx=.5, sy=.5)))
+popViewport()
+  </rcode>
+  <p>
+    Another transformation that cannot be induced by differences between
+    viewports is an inversion of the x-scaling or y-scaling.
+    The <code>viewportTransform()</code> function provides
+    a <code>flip</code> argument to allow this sort of transformation
+    to be specified.
+    The following code demonstrates this argument by first defining
+    a group based on
+    a piece of text in the bottom-left of a bottom-left justified
+    viewport (in the bottom-left corner of the image).
+    The group is then used in a taller viewport that is top-left 
+    justified, with <code>flipY=TRUE</code>.  The resulting text
+    is twice as high and inverted vertically.
+    The group is used in two further viewports to show 
+    inversion of the x-scaling (bottom-right) and inversion of 
+    both scales (top-right).
+  </p>
+  <rcode fig.width="3" fig.height="3">
+pushViewport(viewport(.05, .05, just=c("left", "bottom"),
+                      width=.2, height=.2))
+grid.rect(gp=gpar(lty="dotted"))
+grid.define(textGrob("hello", 0, 0, just=c("left", "bottom")),
+            name="t")
+grid.use("t")
+popViewport()
+pushViewport(viewport(.05, .95, just=c("left", "top"),
+                      width=.2, height=.4))
+grid.rect(gp=gpar(lty="dotted"))
+grid.use("t", 
+         trans=function(g) viewportTransform(g, 
+                                             flip=groupFlip(flipY=TRUE)))
+popViewport()
+pushViewport(viewport(.95, .05, just=c("right", "bottom"),
+                      width=.4, height=.2))
+grid.rect(gp=gpar(lty="dotted"))
+grid.use("t", 
+         trans=function(g) viewportTransform(g, 
+                                             flip=groupFlip(flipX=TRUE)))
+popViewport()
+pushViewport(viewport(.95, .95, just=c("right", "top"),
+                      width=.4, height=.4))
+grid.rect(gp=gpar(lty="dotted"))
+grid.use("t", 
+         trans=function(g) viewportTransform(g, 
+                                             flip=groupFlip(flipX=TRUE, 
+                                                            flipY=TRUE)))
+popViewport()
+  </rcode>
+  <p>
+    It is also possible to specify a custom transformation 
+    in order to simplify the transformation that is induced
+    by differences between viewports.
+    For example, we can ensure that only translations occur
+    and any differences in viewport size are ignored.
+    The following code demonstrates this idea by first
+    defining a group based on a rectangle in a small viewport
+    (bottom-left).
+    The group is then used in a larger viewport, but with
+    <code>viewportTranslate()</code> as the transformation function.
+    The resulting rectangle is the same size as the original
+    rectangle because <code>viewportTranslate()</code> only
+    takes any notice of differences in location between
+    viewports;  it ignores differences in size.
+  </p>
+  <rcode fig.width="3" fig.height="3">
+pushViewport(viewport(.25, .25, width=.2, height=.2))
+grid.rect(gp=gpar(lty="dotted"))
+grid.define(rectGrob(width=.2, height=.2, gp=gpar(fill="black")),
+            name="r")
+grid.use("r")
+popViewport()
+pushViewport(viewport(.75, .75, width=.4, height=.4))
+grid.rect(gp=gpar(lty="dotted"))
+grid.use("r", 
+         trans=viewportTranslate)
+popViewport()
+  </rcode>
+
+  <p>
+    It is also possible to transform a group without having to
+    use it in a different viewport;  we can just provide a 
+    <code>transform</code> argument to <code>grid.use()</code>.
+    However, this sort of "raw" transformation takes place 
+    in the device coordinate system, which can make it difficult
+    to determine the correct transformation.
+    For example, the device origin (0, 0) is top-left for
+    a Cairo device on screen and bottom-right is likely to be
+    several hundred pixels in both dimensions.
+  </p>
+  <p>
+    The following code demonstrates how this might produce 
+    initially confusing results from naive code.
+    We specify a <code>transform</code> function that
+    calls <code>groupRotate</code> to generate an matrix
+    that generates an anti-clockwise rotation of 30 degrees.
+    However, the result is an anti-clockwise rotation of 30 degrees 
+    <em>around the origin</em>, where the origin is the top-left
+    of the image.
+  </p>
+  <rcode fig.width="1" fig.height="1">
+grid.define(rectGrob(width=.4, height=.4, 
+                     gp=gpar(fill=rgb(0,0,0,.5))),
+            name="r")
+grid.use("r")
+grid.use("r", transform=function(g) groupRotate(30))
+  </rcode>
+  <p>
+    If we want to rotate the rectangle (in place), we need to
+    translate to the device origin, rotate, and translate back.
+    And in order to translate, we need to know the position of
+    the rectangle on the device.  The following code
+    uses <code>deviceLoc()</code> to determine the correct 
+    location on the device and defines a transformation function
+    that correctly rotates the rectangle.
+  </p>
+  <rcode fig.width="1" fig.height="1">
+grid.define(rectGrob(width=.4, height=.4, 
+                     gp=gpar(fill=rgb(0,0,0,.5))),
+            name="r")
+grid.use("r")
+loc <- deviceLoc(unit(.5, "npc"), unit(.5, "npc"), device=TRUE)
+trans <- function(g) {
+    groupTranslate(-loc$x, -loc$y) %*%
+    groupRotate(30) %*%
+    groupTranslate(loc$x, loc$y)
+}
+grid.use("r", transform=trans)
+  </rcode>
+  <p>
+    This demonstrates why it may often be easier to specify the transformation
+    through a change in viewport, as shown by the code below.
+  </p>
+  <rcode fig.width="1" fig.height="1">
+grid.define(rectGrob(width=.4, height=.4, 
+                     gp=gpar(fill=rgb(0,0,0,.5))),
+            name="r")
+grid.use("r")
+pushViewport(viewport(angle=30))
+grid.use("r")
+  </rcode>
+
+  <h3>Accumulating transformations</h3>
+  <p>
+    It is possible to define a group in terms of another group.
+    If we also define a group in terms of a reuse of another group
+    it is possible for affine transformations to accumulate.
+    In this situation, keeping track of the meaning of
+    the overall induced transformation
+    rapidly becomes quite difficult, especially because the
+    default induced transformations are applied in a fixed order
+    that does not necessarily accumulate well.
+    This is another situation where being able to customise the 
+    transformation may be useful.
+    The following example walks through a scenario where we accumulate
+    an induced transformation that is difficult to follow and 
+    probably undesirable and demonstrates customising the transformation
+    to obtain a cleaner and more useful result.
+  </p>
+  <p>
+    In the code below, we begin with a grob that describes a simple line 
+    (that is very thick, with rounded ends) that looks a bit
+    like the digit "1".
+    We define a group called 
+    <code>"one"</code>
+    based on this line grob, we create another grob called <code>one</code>
+    that will use that 
+    group, and we draw the grob called <code>one</code>.  The last two lines
+    are a long-winded way of calling <code>grid.use("one")</code>,
+    but having the grob called <code>one</code> means that we can build
+    other grobs based on it, as we will see.
+  </p>
+  <rcode id="onedef" echo="FALSE" eval="FALSE">
+arrow <- linesGrob(c(.5, .5, .4), c(.2, .8, .7),
+                   gp=gpar(lwd=100))
+grid.define(arrow, name="one")
+one <- useGrob("one")
+  </rcode>
+  <rcode fig.width="3" fig.height="3">
+grid.newpage()
+<<onedef>>
+grid.draw(one)    
+  </rcode>
+  <p>
+    In the next code, we push a viewport in the bottom left corner
+    that is (shifted and) smaller, shorter, and rotated compared to
+    the viewport that the group <code>"one"</code> was defined within
+    (a dotted line is drawn to show the extent of the viewport).
+    When we draw the grob called 
+    <code>one</code> 
+    in this viewport 
+    this results in the line being (shifted and) squashed and
+    rotated (clockwise).
+    Within this same viewport, we also define a new group called
+    <code>"g"</code>
+    that is 
+    based on the grob called
+    <code>one</code>.
+  </p>
+  <rcode id="gdef" eval="FALSE">
+pushViewport(viewport(x=.2, y=.2, width=.2, height=.1, angle=-30))
+grid.rect(gp=gpar(lty="dotted"))
+grid.draw(one)
+grid.define(one, name="g")
+popViewport()    
+  </rcode>
+  <rcode fig.width="3" fig.height="3" echo="FALSE">
+grid.newpage()
+<<onedef>>
+grid.draw(one)
+<<gdef>>
+  </rcode>
+  <p>
+    In the next code, we push a viewport in the top-left corner 
+    that is smaller, but still square and unrotated,
+    compared to the original viewport.
+    When we draw the grob called 
+    <code>one</code>
+    in this viewport 
+    this results in the just a smaller version of the
+    original line.
+    All that has happened is a translation and a scaling.
+  </p>
+  <rcode id="oneuse" eval="FALSE">
+pushViewport(viewport(x=.2, y=.8, width=.2, height=.2))
+grid.rect(gp=gpar(lty="dotted"))
+grid.draw(one)
+popViewport()
+  </rcode>
+  <rcode fig.width="3" fig.height="3" echo="FALSE">
+grid.newpage()
+<<onedef>>
+grid.draw(one)
+<<gdef>>
+<<oneuse>>
+  </rcode>
+  <p>
+    In the next code, we push a viewport in the top-right corner
+    that is the same size as the top-left viewport, just
+    at a different location.
+    In this viewport we use the second group,
+    <code>g</code>.
+    The result is complicated because of the accumulation
+    of transformations between group
+    <code>"one"</code>
+    and group
+    <code>"g"</code>.
+    Recall that group
+    <code>"g"</code>
+    was defined in the viewport at bottom-left.
+    Compared to that viewport, the viewport we are now in
+    is (shifted and) bigger, taller, and rotated.
+    This results in the line at bottom-left being 
+    (shifted and) stretched (vertically) and rotated
+    (anticlockwise).
+    The result looks odd because of the accumulation of
+    transformations:  shift, squash, rotate, followed by
+    shift, stretch, rotate.
+    For example, the bottom-left viewport is rotated
+    30 degrees clockwise, but the rotation back to
+    vertical in the top-right viewport does not simply undo
+    that rotation to give a vertical line because
+    of the scaling that occurs in between.
+  </p>
+  <rcode id="guse" eval="FALSE">
+pushViewport(viewport(x=.8, y=.8, width=.2, height=.2))
+grid.rect(gp=gpar(lty="dotted"))
+grid.use("g")
+popViewport()
+  </rcode>
+  <rcode fig.width="3" fig.height="3" echo="FALSE">
+grid.newpage()
+<<onedef>>
+grid.draw(one)
+<<gdef>>
+<<oneuse>>
+<<guse>>
+  </rcode>
+  <p>
+    In the following code, we push a viewport in the bottom-right corner
+    that is again the same size as the top-left viewport, just
+    at a different location and
+    we use the second group,
+    <code>"g"</code>,
+    again.
+    The difference this time is that we explicitly control the order of the
+    transformations that are applied to 
+    <code>"g"</code>.
+    We do this by specifying a <code>transform</code> function to 
+    <code>grid.use()</code>.
+    In this function we ensure that the rotation happens
+    before the scaling, so the result is back to a vertical line
+    (similar to the top-left result, just with more work involved).
+    The result looks better and is easier to understand 
+    because of the custom accumulation of
+    transformations:  shift, squash, rotate, followed by
+    shift, rotate (back to vertical), stretch.    
+  </p>
+  <p>
+    The custom <code>trans()</code> function is a simple modification
+    of the default <code>viewportTransform()</code> function;
+    the predefined functions like <code>viewportTransform()</code>
+    and <code>viewportTranslate()</code>
+    provide nice templates for writing custom transformation
+    functions.
+  </p>
+  <rcode id="trans" eval="FALSE">
+pushViewport(viewport(x=.8, y=.2, width=.2, height=.2))
+grid.rect(gp=gpar(lty="dotted"))
+trans <- function(group, ...) {
+    r <- current.rotation()
+    defnTranslate(group, inverse=TRUE) %*%
+        groupRotate(r - group$r) %*%
+        useScale(group) %*%
+        useTranslate(group)
+}
+grid.use("g", transform=trans)
+popViewport()    
+  </rcode>
+  <rcode fig.width="3" fig.height="3" echo="FALSE">
+grid.newpage()
+<<onedef>>
+grid.draw(one)
+<<gdef>>
+<<oneuse>>
+<<guse>>
+<<trans>>
+  </rcode>
+
+  <h3><a name="ggplot">Treating a plot as a group</a></h3>
+  <p>
+    This section returns to the more complex example from the
+    <a href="#intro"/> Section.  Now that we have seen 
+    how the new graphics features work, we can explain how
+    to produce this plot.  This example also demonstrates that
+    groups can be based on any 'grid' grob, including a grob
+    that represents an entire 'ggplot2' plot.
+  </p>
+  <p>
+    The plot that we will work with is defined with the following code.
+  </p>
+  <rcode>
+library(ggplot2)
+gg <- ggplot(mtcars) +
+    geom_point(aes(disp, mpg)) +
+    theme_bw() +
+    theme(panel.background=element_rect(color=NA, fill="transparent"),
+          plot.background=element_rect(color=NA, fill="transparent"))    
+  </rcode>
+  <p>
+    The code below begins by pushing a viewport that is bottom-left
+    justified at the bottom-left corner of the image (and only occupies
+    60% of the width of the image).
+    We then capture the 'grid' gTree that would be drawn by this plot
+    (and make all lines double thickness).
+    We also define a group based on that gTree.
+    Next, we define a transformation function that will add a shear
+    in the x-direction to the default viewport transformation.
+    We push a new viewport that is much shorter than the first viewport.
+    This induces a scaling in the y-direction.
+    This viewport also enforces a semitransparent mask.
+    We use the group in this new viewport, specifying our custom
+    transformation, which produces a semitransparent, vertically squashed,
+    and horizontally skewed version of the plot.
+    Finally, we pop the second viewport and draw the original group
+    over the top of its squashed and skewed "shadow".
+  </p>
+
+  <rcode fig.width="8" fig.height="5">
+pushViewport(viewport(x=0, y=0, width=.6, 
+                      just=c("left", "bottom")))
+g <- editGrob(grid.grabExpr(plot(gg), gp=gpar(lex=2)))
+grid.define(g, name="g")
+trans <- function(group) {
+    viewportTransform(group, shear=groupShear(2, 0))
+}
+pushViewport(viewport(x=0, y=0, height=1/4, just=c("left", "bottom"),
+                      mask=rectGrob(width=2, 
+                                    gp=gpar(col=NA, fill=rgb(0,0,0,.7)))))
+grid.use("g", transform=trans)
+popViewport()
+grid.draw(g)    
+  </rcode>
+
+  <h3>Listing and editing groups</h3>
+  <p>
+    In simple situations, groups behave very much like a standard 'grid'
+    gTree.  A group consists of one or more grobs and when we draw
+    the group we just draw that collection of grobs.
+    However, previous sections have demonstrated that, by specifying different
+    compositing operators, or by defining a group in one viewport
+    and using it in another, we can get behaviour that deviates 
+    from standard gTrees.  This section demonstrates that, even
+    in simple situations, when a group produces the same graphical output
+    as an equivalent gTree, there are some things that still work
+    differently.
+  </p>
+  <p>
+    In order to demonstrate the differences, we will work with a
+    red rectangle grob and a green circle grob.
+  </p>
+  <rcode>
+r <- rectGrob(gp=gpar(col=NA, fill=2, lwd=3), name="r")
+c <- circleGrob(r=.4, gp=gpar(col=NA, fill=3, lwd=3), name="c")    
+  </rcode>
+  <p>
+    The following code creates a gTree with the rectangle and the circle
+    as its children.  We draw the gTree and then use <code>grid.ls()</code>
+    to list the grobs in our image.
+    The result shows that we have a gTree with a rectangle (<code>r</code>)
+    and a circle (<code>c</code>) as its children.
+  </p>
+  <rcode fig.width="2" fig.height="2">
+gt <- gTree(children=gList(r, c), name="gTree")
+grid.draw(gt)
+grid.ls()
+  </rcode>
+  <p>
+    We can now use the <code>grid.edit()</code> function to modify the
+    gTree or its children.  In the code below we shrink the width
+    of the rectangle.
+  </p>
+  <rcode eval="FALSE">
+grid.edit("r", width=unit(.5, "npc"))    
+  </rcode>
+  <rcode echo="FALSE" fig.width="2" fig.height="2" fig.keep="last">
+grid.draw(gt)
+grid.edit("r", width=unit(.5, "npc"))
+  </rcode>
+  <p>
+    The following code creates a group equivalent of the gTree.
+    In this group, the <code>src</code> is the circle and the 
+    <code>dst</code> is the rectangle (and the default operator
+    is "over"), so when we draw the group, we get the same result
+    as the gTree.
+  </p>
+  <rcode fig.width="2" fig.height="2">
+grid.group(src=c, dst=r, name="group")
+  </rcode>
+  <p>
+    However, if we list the grobs in the image, all we can see
+    is the group grob.
+  </p>
+  <rcode eval="FALSE">
+grid.ls()
+  </rcode>
+  <rcode echo="FALSE" fig.width="2" fig.height="2" fig.keep="none">
+grid.group(src=c, dst=r, name="group")
+grid.ls()
+  </rcode>
+  <p>
+    This demonstrates that the <code>src</code> and <code>dst</code>
+    of a group are not the same as the children of a gTree.
+    A gTree <em>draws</em> its children, but a group is <em>defined by</em>
+    its children.
+    This also means that we cannot directly access the grobs that
+    define a group with a single gPath (like we can with the children
+    of a gTree).
+    However, it is still possible to modify the definition of 
+    a group, as shown in the code below.
+  </p>
+  <rcode eval="FALSE">
+grid.edit("group", dst=editGrob(r, width=unit(.5, "npc")))
+  </rcode>
+  <rcode echo="FALSE" fig.width="2" fig.height="2" fig.keep="last">
+grid.group(src=c, dst=r, name="group")
+grid.edit("group", dst=editGrob(r, width=unit(.5, "npc")))
+  </rcode>
+  <rcode eval="FALSE">
+grid.edit("group", op="xor")
+  </rcode>
+  <rcode echo="FALSE" fig.width="2" fig.height="2" fig.keep="last">
+grid.group(src=c, dst=r, name="group")
+grid.edit("group", dst=editGrob(r, width=unit(.5, "npc")))
+grid.edit("group", op="xor")
+  </rcode>
+
+  <h3>Forcing groups</h3>
+  <p>
+    This section deals with more advanced 'grid' concepts
+    and assumes a strong familiarity with 'grid'.  It builds
+    on the ideas of listing and editing individual grobs within
+    an image, but deals with more complex scenarios than
+    the previous section.
+  </p>
+  <p>
+    It is possible to create 'grid' grobs that generate their
+    content when they are drawn.  An example is the grob that
+    a 'ggplot2' plot creates.  For example, the following code
+    defines a 'ggplot2' plot, draws it, and lists the 
+    grob that has been created.
+  </p>
+  <rcode fig.width="4" fig.height="4">
+g <- ggplot(mtcars) + geom_point(aes(disp, mpg))
+plot(g)
+grid.ls()
+  </rcode>
+  <p>
+    The listing only shows a single grob with no children.
+    This is a "gtable" grob that contains all of the information
+    necessary to draw the 'ggplot2' plot, but it has not created
+    all of the individual text and rectangle grobs for the plot yet;
+    it does that every time it gets drawn.
+  </p>
+  <p>
+    If we want to access the individual text and rectangle grobs
+    for the plot, we have to "force" the "gtable" grob.
+    The following code does this and shows that there are now
+    lots of individual grobs.
+  </p>
+  <rcode eval="FALSE">
+grid.force()
+grid.ls()
+  </rcode>
+  <rcode echo="FALSE" fig.width="4" fig.height="4" fig.keep="last">
+plot(g)
+grid.force()
+grid.ls()
+  </rcode>
+  <p>
+    The next code modifies the individual points grob
+    to colour the points alternating red and green
+  </p>
+  <rcode eval="FALSE">
+grid.edit("points", grep=TRUE, gp=gpar(col=2:3))
+  </rcode>
+  <rcode echo="FALSE" fig.width="4" fig.height="4" fig.keep="last">
+plot(g)
+grid.force()
+grid.edit("points", grep=TRUE, gp=gpar(col=2:3))
+  </rcode>
+  <p>
+    It is possible to create a group based on a grob that only
+    generates its content when it is drawn.
+    For example, the following code creates a group 
+    based on the 'ggplot2' plot from above.
+  </p>
+  <rcode>
+ggrob <- ggplotGrob(g)
+gp <- groupGrob(ggrob, name="group")
+  </rcode>
+  <p>
+    As the previous section pointed out, <code>grid.ls()</code>
+    and <code>grid.edit()</code> cannot see or access the <code>src</code>
+    or <code>dst</code> of a group grob.
+    For the group that we just defined, when we look at the group
+    <code>src</code>, we cannot see any of its individual grobs either;
+    the <code>src</code> is just a "gtable" grob that will generate
+    its individual grobs when it gets drawn.
+    This is illustrated in the output from <code>grid.ls()</code> below.
+  </p>
+  <rcode>
+grid.ls(gp)
+grid.ls(gp$src)
+  </rcode>
+  <p>
+    In this situation it is doubly hard to access and modify the grobs
+    within a group.  However, it is still possible if we
+    edit the grob before we use it to define a group.
+    For example, the following code forces the 'ggplot2' plot grob
+    and edits it before defining a group based on the edited grob.
+    The result is a group based on the modified 'ggplot2' plot.
+  </p>
+  <rcode fig.width="4" fig.height="4">
+ggrobForced <- forceGrob(ggrob)
+ggrobMod <- editGrob(ggrobForced, "points", grep=TRUE,
+                     gp=gpar(col=2:3))
+grid.group(ggrobMod)
+  </rcode>
+  <p>
+    A slightly more difficult scenario arises when we want to 
+    edit the individual grobs within a group that someone else's
+    code has drawn.  In this case, we need to access the group,
+    access the <code>src</code> grob within the group, force
+    that <code>src</code> grob, modify the forced grob, and
+    edit the group to replace the original <code>src</code>
+    with the new forced and modified version.
+    The following code demonstrates this idea,
+    starting with a group that is drawn from a 'ggplot2'
+    "gtable" grob; this represents a group that has already
+    been drawn based on a <code>src</code> grob that generates
+    its individual grobs only when it is drawn.  
+  </p>
+  <rcode fig.width="4" fig.height="4" fig.keep="last">
+grid.group(ggrob, name="group")
+gp <- grid.get("group")
+src <- gp$src
+srcForced <- forceGrob(src)
+srcMod <- editGrob(srcForced, "points", grep=TRUE,
+                   gp=gpar(col=2:3))
+grid.edit("group", src=srcMod)
+  </rcode>
+  
+  <h2><a name="device">Device API</a></h2>
+  <p>
+    This section describes the impact that the changes to R
+    will have on packages that provide a graphics device,
+    like the 'ragg' package (<a href="#pkg:ragg"/>).
+  </p>
+  <p>
+    The good news is that maintainers of R packages that implement
+    graphics devices do not need to do anything in response
+    to these changes.  Graphics device packages will need to be reinstalled
+    for R version 4.2.0, but they do not need to be updated.
+    The graphics engine will only make calls to the graphics device
+    to define or use groups if the graphics device <code>deviceVersion</code>
+    is set to 15 (<code>R_GE_group</code>) or higher.  Of course, if 
+    the graphics device has a lower <code>deviceVersion</code>,
+    R code that defines or uses groups will have no effect.
+  </p>
+
+  <h3>A template for no support</h3>
+  <p>
+    A device can be updated, by setting 
+    <code>dev->deviceVersion</code> to 15
+    (<code>R_GE_groups</code>), but it does not have to offer support
+    for the new features.
+  </p>
+  <p>
+    As an example of the (minimal) changes necessary to update a device
+    (<str>without</str> support for any of the new group features),
+    the following diff output
+    shows the changes made to the <code>postscript()</code>
+    device.
+  </p>
+  <pre>
+@@ -3033,6 +3033,14 @@
++static SEXP     PS_defineGroup(SEXP source, int op, SEXP destination,
++                               pDevDesc dd);
++static void     PS_useGroup(SEXP ref, SEXP trans, pDevDesc dd);
++static void     PS_releaseGroup(SEXP ref, pDevDesc dd);
+
+@@ -3495,11 +3503,17 @@
++    dd->defineGroup     = PS_defineGroup;
++    dd->useGroup        = PS_useGroup;
++    dd->releaseGroup    = PS_releaseGroup;
+
+-    dd->deviceVersion = R_GE_definitions;
++    dd->deviceVersion = R_GE_group;
+
+@@ -4535,8 +4549,22 @@
++static SEXP PS_defineGroup(SEXP source, int op, SEXP destination, pDevDesc dd) {
++    return R_NilValue;
++}
+
++static void PS_useGroup(SEXP ref, SEXP trans, pDevDesc dd) {}
+
++static void PS_releaseGroup(SEXP ref, pDevDesc dd) {}
+  </pre>
+
+  
+  <h3>Implementing support for groups</h3>
+
+  <p>
+    This section provides information about what to do
+    if a graphics device package wishes
+    to provide support for the new group features.
+  </p>
+  <p>
+    The <code>dev->deviceVersion</code> must be set to 15
+    (<code>R_GE_groups</code>) or higher.
+  </p>
+  <p>
+    A device must implement the new <code>dev->defineGroup</code>
+    function.  The first and third arguments to this function
+    (<code>source</code> and <code>destination</code>)
+    are R function objects,
+    with the <code>destination</code> potentially <code>NULL</code>.
+    If <code>destination</code> is not <code>NULL</code>,
+    the device should evaluate the <code>destination</code> function.
+    As with 
+    clipping paths and masks 
+    (<a href="#murrell-definitions-2020"/>),
+    this will generate further calls to the device to draw shapes,
+    which the device should capture to define the "destination"
+    (rather than drawing immediately).
+    For example, the Cairo devices perform the drawing within a 
+    <code>cairo_push_group</code> and <code>cairo_pop_group</code>;
+    the <code>pdf()</code> device records the drawing within
+    temporary strings.
+  </p>
+  <p>
+    The device should next set the compositing operator based on
+    the second argument to <code>dev->defineGroup</code>, called
+    <code>op</code>.  This should happen
+    regardless of whether <code>destination</code>
+    is <code>NULL</code> or not.  The C API provides 
+    <code>R_GE_compositeClear</code>, 
+    <code>R_GE_compositeSource</code>,
+    <code>R_GE_compositeOver</code>, etc to switch on.
+  </p>
+  <p>
+    The device should then evaluate the <code>source</code> function
+    and capture the resulting drawing as the "source".
+    This combination of destination (maybe) combined with
+    source using the given compositing operator defines the group.
+    The device should return a reference to the resulting group
+    definition.  This reference can be any R object; it only has to make
+    sense to the device.
+  </p>
+  <p>
+    The device must enforce the current graphical parameter
+    settings when creating the group definition, so that these are fixed for
+    when the group is used.
+  </p>
+  <p>
+    A device must also implement the new <code>dev->useGroup</code>.
+    The first argument is a reference to a group definition
+    (taken from the return value of a call to <code>dev->defineGroup</code>).
+    The second argument is a 3x3 R matrix object that specifies
+    an affine transformation.  
+    The device should apply the transformation and
+    combine the group with any previous drawing using 
+    the normal "over" operator.
+  </p>
+  <p>
+    Finally, the device should implement <code>dev->releaseGroup</code>.
+    The first argument to this function is a reference to an existing
+    group.  This allows the device to release resources associated
+    with a group.
+  </p>
+
+  <h3>Exemplars</h3>
+  <p>
+    Support for these new features has been implemented for the
+    <code>pdf()</code> device and the devices that are based on Cairo
+    graphics, so the code for those devices demonstrates some
+    possible approaches to implementation.
+    In both of these cases, the infrastructure that was previously
+    added to support
+    fill patterns, clipping paths, and masks has been reused
+    (<a href="#murrell-definitions-2020"/>).
+  </p>
+  <p>
+    For the <code>pdf()</code> device, <code>defineGroup</code>
+    creates temporary strings to
+    capture PDF code during the evaluation of the <code>source</code>
+    and <code>destination</code> functions.  These, along with the 
+    <code>op</code> are used to define the content stream of an
+    XObject that can be referenced elsewhere in the PDF document.
+    An integer index is returned as the result.
+    The <code>useGroup</code> implementation sets up the 
+    appropriate transformation matrix and performs a 
+    <code>Do</code> operation with a reference to the relevant 
+    XObject.
+    The <code>releaseGroup</code> implementation does nothing.
+  </p>
+  <p>
+    For Cairo devices, <code>defineGroup</code> uses 
+    <code>cairo_push_group()</code> to capture Cairo drawing
+    operations as a separate image.  Any drawing
+    during the evaluation of <code>source</code> and
+    <code>destination</code> is captured to that image, with the <code>op</code>
+    compositing operator set between evaluating <code>destination</code> and
+    <code>source</code>.
+    The image is held in memory until the group is released.
+    Again, an integer index to the group is returned as the result.
+    The <code>useGroup</code> implementation sets up an 
+    appropriate transformation matrix and then uses the relevant
+    group image to paint the group on the main image.
+    The <code>releaseGroup</code> implementation releases the
+    group image from memory.
+  </p>
+
+  <h2><a name="discussion">Discussion</a></h2>
+
+  <p>
+    The addition of groups to the R graphics engine
+    significantly extends the range of graphical effects
+    that can be achieved with R code.  
+    As mentioned in the introduction, the primary motivation
+    for these changes is to provide access to more sophisticated
+    graphical features in graphics formats like PDF and 
+    graphics systems like Cairo, so that more can be achieved
+    purely in R code rather than having to fine-tune images
+    manually outside of R.
+  </p>
+  <h3>Limitations</h3>
+  <p>
+    The most important limitation to acknowledge is the fact that
+    these new features are only currently supported on a subset
+    of the core graphics devices:  the <code>pdf()</code> device
+    and the devices based on Cairo graphics (e.g.,
+    <code>png(type="cairo")</code>,
+    <code>cairo_pdf()</code> and <code>svg()</code>).
+    Furthermore, the Porter-Duff compositing operators are only
+    supported on the Cairo devices.
+  </p>
+  <p>
+    The 'ragg' package is adding support for the previous set of
+    graphics features (gradients, patterns, clipping paths,
+    and masks), so there is hope that the 'ragg' package will also be able to
+    support this new set of features as well in the future.
+  </p>
+  <p>
+    Although the user interface for the new features is limited
+    to the low-level 'grid' graphics system, any high-level graphics system
+    that is built on 'grid', like 'ggplot2', can also make use 
+    of the new features, either by post-hoc editing with functions like
+    <code>grid.edit()</code>, or, in the case of 'ggplot2', by adding layers
+    with the 
+    'gggrid' package (<a href="#pkg:gggrid"/>).
+    Thanks to the 'gridGraphics' package (<a href="#pkg:gridGraphics"/>),
+    it is also possible to work with plots from the 'graphics' package
+    by converting them to 'grid' equivalents and then using post-hoc editing.
+  </p>
+
+  <h3>Related work</h3>
+  <p>
+    The addition of these new features broadens the range of 
+    graphical output that is possible with R graphics.
+    This narrows the gap between R graphics and some other graphics
+    systems like PGF/TikZ (<a href="#tantau:2013a"/>).  
+    For example, the ability to apply 
+    affine transformations is similar to the 
+    "canvas" coordinate system within PGF.
+    On one hand this allows users to generate graphical images
+    within a single system rather than having to mix systems
+    in order to get specific features.
+    On the other hand, this improves our ability to exchange 
+    output between systems without losing features.
+    For example, the 'dvir' package 
+    (<a href="#pkg:dvir"/>; <a href="murrell-dvir-tikz-2020"/>) 
+    should be able to
+    correctly import and render a wider range of TikZ output.
+  </p>
+  <p>
+    Similarly, the packages 'grImport' 
+    (<a href="#pkg:grImport"/>) and 'grImport2'
+    (<a href="#pkg:grImport2"/>) 
+    which import PostScript and SVG images to R should be
+    able to import and correctly reproduce a wider range of external images.
+  </p>
+  <p>
+    Several other packages provide ways to expand the range
+    of graphical output in R, many of them as extensions to
+    the 'ggplot2' system.
+    For example, 'ggpattern' (<a href="#pkg:ggpattern"/>) provides
+    functions for generating pattern fills and
+    'ggtext' (<a href="#pkg:ggtext"/>) provides more complex 
+    text formatting.
+    The 'ggfx'  package (<a href="#pkg:ggfx"/>) provides, at a raster level,
+    compositing operators, plus a whole range of other filters.
+    There is also some overlap with the 'gridGeometry' package 
+    (<a href="#pkg:gridGeometry"/>), which allows shapes to be 
+    combined, e.g., with an "xor" operator, before rendering the result.
+    In all of these cases, the additional features within the R graphics
+    engine should make it easier for those packages to do their work
+    (at least on some graphics devices).
+    Because they do not rely on graphics device support,
+    the enduring usefulness of these packages will be their ability
+    to work across a wider range of R graphic devices.
+    On the other hand, some of the new features, for example affine
+    transformations, are not currently available any other way
+    in R graphics.
+  </p>
+
+  <h2>Acknowledgements</h2>
+  <p>
+    Thanks to the CRAN group, particularly Brian Ripley, for 
+    assistance with testing and coordinating the merge
+    of these changes into R.
+  </p>
+
+  <h2><a name="requirements">Technical requirements</a></h2>
+  <p>
+    The examples and discussion in this report relate to 
+    the development version of R (specifically revision 81125),
+    which will eventually become R version 4.2.0.
+  </p>
+  <p>
+    This report was generated within a Docker container
+    (see <a href="#Resources">Resources</a> section below).
+  </p>
+
+  <h2><a name="Resources">Resources</a></h2>
+  <ul>
+    <li>
+      The <a href="groups.cml">raw source file</a> for this
+      report, a <a href="groups.xml">valid XML</a>
+      transformation of the source file, a <a
+      href="groups.Rhtml">'knitr' document</a> generated from
+      the XML file, 
+      two <a href="toc.R">R</a> <a href="bib.R">files</a> and
+      the <a href="groups.bib">bibtex file</a>
+      that are used to generate the table of contents and reference sections,
+      two <a href="common.xsl">XSL</a> <a
+      href="knitr.xsl">files</a> and an 
+      <a href="knit.R">R file</a> that are used to transform the XML to
+      the 'knitr' document, and a <a href="Makefile">Makefile</a> that
+      contains code for the other transformations and coordinates
+      everything.  
+      These materials are also available
+      on <a href="https://github.com/pmur002/groups-report/releases/tag/v1">github</a>.
+    </li>
+    <li>
+      This report was generated within a 
+      <a href="https://www.docker.com/">Docker</a> container.
+      The Docker command to build the report is included in the Makefile above.
+      The Docker image for the container is available from
+      <a href="https://hub.docker.com/r/pmur002/groups-report/">Docker Hub</a>;
+      alternatively, the image can be rebuilt from its 
+      <a href="Dockerfile">Dockerfile</a>.
+    </li>
+  </ul>
+
+  <h2>How to cite this report</h2>
+  <p>
+    Murrell, P. (2021). "Groups, Compositing Operators, and Affine Transformations in R Graphics" 
+    Technical Report 2021-??, Department of Statistics, The University of Auckland. 
+    Version 1.
+    [ <a href="how-to-cite.bib">bib</a> |
+      <a href="http://dx.doi.org/">DOI</a> | 
+      <a href="https://stattech.blogs.auckland.ac.nz/">http</a> ]
+  </p>
+
+  <h2><a name="references">References</a></h2>
+  <ul style="list-style-type: none">
+    <li>
+      <a name="R"/>
+    </li>
+    <li>
+      <a name="murrell-definitions-2020"/>
+    </li>
+    <li>
+      <a name="PDF"/>
+    </li>
+    <li>
+      <a name="cairo"/>
+    </li>
+    <li>
+      <a name="pkg:ggplot2"/>
+    </li>
+    <li>
+      <a name="10.1145/800031.808606"/>
+    </li>
+    <li>
+      <a name="pkg:ragg"/>
+    </li>
+    <li>
+      <a name="pkg:gridGraphics"/>
+    </li>
+    <li>
+      <a name="pkg:gggrid"/>
+    </li>
+    <li>
+      <a name="tantau:2013a"/>
+    </li>
+    <li>
+      <a name="pkg:dvir"/>
+    </li>
+    <li>
+      <a name="murrell-dvir-tikz-2020"/>
+    </li>
+    <li>
+      <a name="pkg:grImport"/>
+    </li>
+    <li>
+      <a name="pkg:grImport2"/>
+    </li>
+    <li>
+      <a name="pkg:ggpattern"/>
+    </li>
+    <li>
+      <a name="pkg:ggtext"/>
+    </li>
+    <li>
+      <a name="pkg:ggfx"/>
+    </li>
+    <li>
+      <a name="pkg:gridGeometry"/>
+    </li>
+  </ul>
+
+  <hr/>
+  <p>
+    <a rel="license"
+    href="http://creativecommons.org/licenses/by/4.0/"><img class="CC"
+    alt="Creative Commons License" style="border-width:0"
+    src="https://i.creativecommons.org/l/by/4.0/88x31.png"/></a><br/><span
+    xmlns:dct="http://purl.org/dc/terms/"
+    property="dct:title">This document</span>
+    by <span xmlns:cc="http://creativecommons.org/ns#"
+    property="cc:attributionName">Paul
+    Murrell</span> is licensed under a <a rel="license"
+    href="http://creativecommons.org/licenses/by/4.0/">Creative
+    Commons Attribution 4.0 International License</a>.
+  </p>
+
+</body>
+</html>
