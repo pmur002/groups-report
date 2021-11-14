@@ -795,7 +795,7 @@ grid.segments(0, 1:4/5, 1, 1:4/5, gp=gpar(col=3, lwd=20))
 
   <h3>Affine transformations</h3>
   <p>
-    As hinted at in the <a href="#api"/> Section above, group affine
+    As hinted at in the <a href="#api"/> Section, group affine
     transformations work quite differently to the "normal"
     'grid' transformations - the transformations that occur as a result of 
     pushing 'grid' viewports and 
@@ -1058,7 +1058,7 @@ popViewport()
     then reuses it in three viewports in
     each of the other three corners of the image.
     The different locations of the viewports induce a translation,
-    but also we specify a custom <code>transform</code> in each reuse
+    but we also specify a custom <code>transform</code> in each reuse
     that is a function that adds a <code>shear</code> to the 
     default viewport transformation.  This results in different
     shear transformations of the rectangle (in addition to the
@@ -1305,7 +1305,7 @@ grid.draw(one)
     When we draw the grob called 
     <code>one</code>
     in this viewport 
-    this results in the just a smaller version of the
+    this results in just a smaller version of the
     original line.
     All that has happened is a translation and a scaling.
   </p>
@@ -1908,7 +1908,7 @@ grid.edit("group", src=srcMod)
     On the other hand, this improves our ability to exchange 
     output between systems without losing features.
     For example, the 'dvir' package 
-    (<a href="#pkg:dvir"/>; <a href="murrell-dvir-tikz-2020"/>) 
+    (<a href="#pkg:dvir"/>; <a href="#murrell-dvir-tikz-2020"/>) 
     should be able to
     correctly import and render a wider range of TikZ output.
   </p>
@@ -1995,11 +1995,11 @@ grid.edit("group", src=srcMod)
   <h2>How to cite this report</h2>
   <p>
     Murrell, P. (2021). "Groups, Compositing Operators, and Affine Transformations in R Graphics" 
-    Technical Report 2021-??, Department of Statistics, The University of Auckland. 
+    Technical Report 2021-02, Department of Statistics, The University of Auckland. 
     Version 1.
     [ <a href="how-to-cite.bib">bib</a> |
-      <a href="http://dx.doi.org/">DOI</a> | 
-      <a href="https://stattech.blogs.auckland.ac.nz/">http</a> ]
+      <a href="http://dx.doi.org/10.17608/k6.auckland.17009120">DOI</a> | 
+      <a href="https://stattech.blogs.auckland.ac.nz/2021/11/15/2021-02-groups-compositing-operators-and-affine-transformations-in-r-graphics">http</a> ]
   </p>
 
   <h2><a name="references">References</a></h2>

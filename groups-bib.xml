@@ -809,7 +809,7 @@ grid.segments(0, 1:4/5, 1, 1:4/5, gp=gpar(col=3, lwd=20))
   ]]></rcode>
     <h3>Affine transformations</h3>
     <p>
-    As hinted at in the <a href="#api">User API</a> Section above, group affine
+    As hinted at in the <a href="#api">User API</a> Section, group affine
     transformations work quite differently to the "normal"
     'grid' transformations - the transformations that occur as a result of 
     pushing 'grid' viewports and 
@@ -1071,7 +1071,7 @@ popViewport()
     then reuses it in three viewports in
     each of the other three corners of the image.
     The different locations of the viewports induce a translation,
-    but also we specify a custom <code>transform</code> in each reuse
+    but we also specify a custom <code>transform</code> in each reuse
     that is a function that adds a <code>shear</code> to the 
     default viewport transformation.  This results in different
     shear transformations of the rectangle (in addition to the
@@ -1316,7 +1316,7 @@ grid.draw(one)
     When we draw the grob called 
     <code>one</code>
     in this viewport 
-    this results in the just a smaller version of the
+    this results in just a smaller version of the
     original line.
     All that has happened is a translation and a scaling.
   </p>
@@ -1912,7 +1912,7 @@ grid.edit("group", src=srcMod)
     On the other hand, this improves our ability to exchange 
     output between systems without losing features.
     For example, the 'dvir' package 
-    (<a href="#pkg:dvir">Murrell, 2021a</a>; <a href="murrell-dvir-tikz-2020"/>) 
+    (<a href="#pkg:dvir">Murrell, 2021a</a>; <a href="#murrell-dvir-tikz-2020">Murrell, 2020a</a>) 
     should be able to
     correctly import and render a wider range of TikZ output.
   </p>
@@ -1997,11 +1997,11 @@ grid.edit("group", src=srcMod)
     <h2>How to cite this report</h2>
     <p>
     Murrell, P. (2021). "Groups, Compositing Operators, and Affine Transformations in R Graphics" 
-    Technical Report 2021-??, Department of Statistics, The University of Auckland. 
+    Technical Report 2021-02, Department of Statistics, The University of Auckland. 
     Version 1.
     [ <a href="how-to-cite.bib">bib</a> |
-      <a href="http://dx.doi.org/">DOI</a> | 
-      <a href="https://stattech.blogs.auckland.ac.nz/">http</a> ]
+      <a href="http://dx.doi.org/10.17608/k6.auckland.17009120">DOI</a> | 
+      <a href="https://stattech.blogs.auckland.ac.nz/2021/11/15/2021-02-groups-compositing-operators-and-affine-transformations-in-r-graphics">http</a> ]
   </p>
     <h2>
       <a name="references">8. References</a>
@@ -2025,8 +2025,9 @@ Adobe Systems Incorporated (2001).
 <dd>
 FC, M. (2020).
  <em>ggpattern: Geoms with Patterns</em>.
- http://github.com/coolbutuseless/ggpattern.
-[ <a href="groups-bib_bib.html#pkg:ggpattern">bib</a> ]
+ R package version 0.2.0.
+[ <a href="groups-bib_bib.html#pkg:ggpattern">bib</a> | 
+<a href="http://github.com/coolbutuseless/ggpattern">http</a> ]
 
 </dd>
 
@@ -2095,6 +2096,7 @@ Murrell, P. (2020b).
 <dd>
 Murrell, P. (2021a).
  <em>dvir: Render DVI Files</em>.
+ R package version 0.3-2.
 [ <a href="groups-bib_bib.html#pkg:dvir">bib</a> | 
 <a href="https://github.com/pmur002/dvir">http</a> ]
 
@@ -2108,7 +2110,8 @@ Murrell, P. (2021a).
 Murrell, P. (2021b).
  <em>gggrid: Draw with 'grid' in 'ggplot2'</em>.
  R package version 0.1-0.
-[ <a href="groups-bib_bib.html#pkg:gggrid">bib</a> ]
+[ <a href="groups-bib_bib.html#pkg:gggrid">bib</a> | 
+<a href="https://github.com/pmur002/gggrid">http</a> ]
 
 </dd>
 
@@ -2187,8 +2190,9 @@ Porter, T. and Duff, T. (1984).
 <dd>
 Potter, S. and Murrell, P. (2019).
  <em>grImport2: Importing 'SVG' Graphics</em>.
- https://r-forge.r-project.org/projects/grimport/.
-[ <a href="groups-bib_bib.html#pkg:grImport2">bib</a> ]
+ R package version 0.2-1.
+[ <a href="groups-bib_bib.html#pkg:grImport2">bib</a> | 
+<a href="https://r-forge.r-project.org/projects/grimport/">http</a> ]
 
 </dd>
 
