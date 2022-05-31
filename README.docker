@@ -1,7 +1,7 @@
 
 + Created docker image with (NOTE ONLY lowercase in image tag) ...
 
-  sudo docker build -t pmur002/groups-report .
+  sudo docker build -t pmur002/groups-report:v2 .
 
   - NOTE that this is probably best run on Uni office machine
     (e.g., sc-stat-315635.uoa.auckland.ac.nz)
@@ -36,12 +36,12 @@
 
    E.G., test that the report will build !!!
 
-  sudo docker run -v $(pwd):/home/work/ -w /home/work --rm -t -i pmur002/groups-report /bin/bash
+  sudo docker run -v $(pwd):/home/work/ -w /home/work --rm -t -i pmur002/groups-report:v2 /bin/bash
 
 + To make image available on DockerHub ...
 
   sudo docker login
-  sudo docker push pmur002/groups-report
+  sudo docker push pmur002/groups-report:v2
 
 + Build report with ...
 

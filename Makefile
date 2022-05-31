@@ -4,9 +4,11 @@ TARFILE = ../groups-deposit-$(shell date +'%Y-%m-%d').tar.gz
 # For building on my office desktop
 # Rscript = ~/R/r-devel-groups/BUILD/bin/Rscript
 # Rscript = ~/R/r-devel/BUILD/bin/Rscript
+# Rscript = ~/R/r-release/BUILD/bin/Rscript
+# Rscript = Rscript
 
 # For building in Docker container
-Rscript = /R/bin/Rscript
+Rscript = /R/R-patched/bin/Rscript
 
 %.xml: %.cml %.bib
 	# Protect HTML special chars in R code chunks
@@ -22,10 +24,12 @@ Rscript = /R/bin/Rscript
 %.html : %.Rhtml
 	# Use knitr to produce HTML
 	$(Rscript) knit.R $*.Rhtml
+	# Check that figures have not changed
+	$(Rscript) gdiff.R
 
 docker:
-	sudo docker build -t pmur002/groups-report .
-	sudo docker run -v $(shell pwd):/home/work/ -w /home/work --rm pmur002/groups-report make groups.html
+	sudo docker build -t pmur002/groups-report:v2 .
+	sudo docker run -v $(shell pwd):/home/work/ -w /home/work --rm pmur002/groups-report:v2 make groups.html
 
 web:
 	make docker
