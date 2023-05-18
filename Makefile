@@ -5,10 +5,10 @@ TARFILE = ../groups-deposit-$(shell date +'%Y-%m-%d').tar.gz
 # Rscript = ~/R/r-devel-groups/BUILD/bin/Rscript
 # Rscript = ~/R/r-devel/BUILD/bin/Rscript
 # Rscript = ~/R/r-release/BUILD/bin/Rscript
-# Rscript = Rscript
-
 # For building in Docker container
-Rscript = /R/R-patched/bin/Rscript
+# Rscript = /R/R-patched/bin/Rscript
+Rscript = Rscript
+
 
 %.xml: %.cml %.bib
 	# Protect HTML special chars in R code chunks
@@ -28,8 +28,8 @@ Rscript = /R/R-patched/bin/Rscript
 	$(Rscript) gdiff.R
 
 docker:
-	sudo docker build -t pmur002/groups-report:v2 .
-	sudo docker run -v $(shell pwd):/home/work/ -w /home/work --rm pmur002/groups-report:v2 make groups.html
+	sudo docker build -t pmur002/groups-report:v3 .
+	sudo docker run -v $(shell pwd):/home/work/ -w /home/work --rm pmur002/groups-report:v3 make groups.html
 
 web:
 	make docker
@@ -38,3 +38,4 @@ web:
 zip:
 	make docker
 	tar zcvf $(TARFILE) ./*
+

@@ -111,12 +111,13 @@ Groups, Compositing Operators, and Affine Transformations in R Graphics</h1>
       </span>
     </p>
     <p class="date">
-    Version 2:  
-Monday 30 May 2022
+    Version 3:  
+Thursday 18 May 2023
   </p>
     <p class="date versionHistory">
-    Version 1:  Monday 15 November 2021<br>
-    Version 2:  Removed "Accumulating transformations"; added "The vp argument"; added "Appendix".
+    Version 1:  Original publication (Monday 15 November 2021).<br>
+    Version 2:  Removed "Accumulating transformations"; added "The vp argument"; added "Appendix" (Monday 30 May 2022).<br>
+    Version 3:  Update <a href="https://www.stat.auckland.ac.nz/~paul/Reports/GraphicsEngine/compositing/compositing.html">behaviour of Porter-Duff compositing operators</a>; removed "Appendix".
   </p>
 
 
@@ -134,7 +135,7 @@ Monday 30 May 2022
     affine transformations. 
   </p>
     <p>
-    These features are available in R version 4.2.0.
+    These features are available from R version 4.2.0.
   </p>
     <p>
     R users wanting to try out the new graphics features should start with
@@ -189,9 +190,6 @@ Monday 30 May 2022
         <li>
           <a href="#references">8. References</a>
         </li>
-        <li>
-          <a href="#cairo-compositing">9. Appendix: Cairo Graphics Compositing Operators</a>
-        </li>
       </ul>
     </div>
     <h2>
@@ -225,7 +223,7 @@ Monday 30 May 2022
 <span class="hl std">c</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">circleGrob</span><span class="hl std">(</span><span class="hl num">1</span><span class="hl opt">:</span><span class="hl num">2</span><span class="hl opt">/</span><span class="hl num">3</span><span class="hl std">,</span> <span class="hl kwc">r</span><span class="hl std">=</span><span class="hl num">.3</span><span class="hl std">,</span> <span class="hl kwc">gp</span><span class="hl std">=</span><span class="hl kwd">gpar</span><span class="hl std">(</span><span class="hl kwc">col</span><span class="hl std">=</span><span class="hl num">2</span><span class="hl opt">:</span><span class="hl num">3</span><span class="hl std">,</span> <span class="hl kwc">fill</span><span class="hl std">=</span><span class="hl num">2</span><span class="hl opt">:</span><span class="hl num">3</span><span class="hl std">))</span>
 <span class="hl kwd">grid.draw</span><span class="hl std">(c)</span>
 </pre></div>
-</div><div class="rimage default"><img src="figure/unnamed-chunk-4-1.png" title="plot of chunk unnamed-chunk-4" alt="plot of chunk unnamed-chunk-4" class="plot" /></div></div>
+</div><div class="rimage default"><img src="figure/unnamed-chunk-4-1.png" alt="plot of chunk unnamed-chunk-4" class="plot" /></div></div>
     <p>
     We will now draw the same circles (and text), but this time
     in a viewport with a semitransparency mask.
@@ -235,7 +233,7 @@ Monday 30 May 2022
 <span class="hl kwd">pushViewport</span><span class="hl std">(</span><span class="hl kwd">viewport</span><span class="hl std">(</span><span class="hl kwc">mask</span><span class="hl std">=mask))</span>
 <span class="hl kwd">grid.draw</span><span class="hl std">(c)</span>
 </pre></div>
-</div><div class="rimage default"><img src="figure/unnamed-chunk-5-1.png" title="plot of chunk unnamed-chunk-5" alt="plot of chunk unnamed-chunk-5" class="plot" /></div></div>
+</div><div class="rimage default"><img src="figure/unnamed-chunk-5-1.png" alt="plot of chunk unnamed-chunk-5" class="plot" /></div></div>
     <p>
     The result is that each circle is drawn with the mask applied,
     so each circle becomes semitransparent.  The circles overlap
@@ -251,7 +249,7 @@ Monday 30 May 2022
 <span class="hl kwd">pushViewport</span><span class="hl std">(</span><span class="hl kwd">viewport</span><span class="hl std">(</span><span class="hl kwc">mask</span><span class="hl std">=mask))</span>
 <span class="hl kwd">grid.group</span><span class="hl std">(c)</span>
 </pre></div>
-</div><div class="rimage default"><img src="figure/unnamed-chunk-6-1.png" title="plot of chunk unnamed-chunk-6" alt="plot of chunk unnamed-chunk-6" class="plot" /></div></div>
+</div><div class="rimage default"><img src="figure/unnamed-chunk-6-1.png" alt="plot of chunk unnamed-chunk-6" class="plot" /></div></div>
     <p>
     The difference is that the opaque circles are drawn together first
     as an isolated group,
@@ -285,7 +283,7 @@ Monday 30 May 2022
     once we have a better idea of how the new graphics
     functions work.
   </p>
-<div class="chunk" id="unnamed-chunk-7"><div class="rimage default"><img src="figure/unnamed-chunk-7-1.png" title="plot of chunk unnamed-chunk-7" alt="plot of chunk unnamed-chunk-7" class="plot" /></div></div>
+<div class="chunk" id="unnamed-chunk-7"><div class="rimage default"><img src="figure/unnamed-chunk-7-1.png" alt="plot of chunk unnamed-chunk-7" class="plot" /></div></div>
     <p>
     The <a href="#api">User API</a> Section provides simple examples that
     demonstrate all of the new user-level
@@ -345,7 +343,7 @@ Monday 30 May 2022
 <span class="hl std">gt</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">gTree</span><span class="hl std">(</span><span class="hl kwc">children</span><span class="hl std">=</span><span class="hl kwd">gList</span><span class="hl std">(r, c))</span>
 <span class="hl kwd">grid.group</span><span class="hl std">(gt)</span>
 </pre></div>
-</div><div class="rimage default"><img src="figure/unnamed-chunk-8-1.png" title="plot of chunk unnamed-chunk-8" alt="plot of chunk unnamed-chunk-8" class="plot" /></div></div>
+</div><div class="rimage default"><img src="figure/unnamed-chunk-8-1.png" alt="plot of chunk unnamed-chunk-8" class="plot" /></div></div>
     <p>
     The following code draws the entire gTree from a 'ggplot2'
     plot as a group.
@@ -356,7 +354,7 @@ Monday 30 May 2022
 <div class="chunk" id="unnamed-chunk-10"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">gg</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">ggplotGrob</span><span class="hl std">(</span><span class="hl kwd">ggplot</span><span class="hl std">(mtcars)</span> <span class="hl opt">+</span> <span class="hl kwd">geom_point</span><span class="hl std">(</span><span class="hl kwd">aes</span><span class="hl std">(disp, mpg)))</span>
 <span class="hl kwd">grid.group</span><span class="hl std">(gg)</span>
 </pre></div>
-</div><div class="rimage default"><img src="figure/unnamed-chunk-10-1.png" title="plot of chunk unnamed-chunk-10" alt="plot of chunk unnamed-chunk-10" class="plot" /></div></div>
+</div><div class="rimage default"><img src="figure/unnamed-chunk-10-1.png" alt="plot of chunk unnamed-chunk-10" class="plot" /></div></div>
     <p>
     The above results are exactly the same as the results we would get
     by just drawing the grobs normally, as the code below shows for the simple 
@@ -364,7 +362,7 @@ Monday 30 May 2022
   </p>
 <div class="chunk" id="unnamed-chunk-11"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl kwd">grid.draw</span><span class="hl std">(gt)</span>
 </pre></div>
-</div><div class="rimage default"><img src="figure/unnamed-chunk-11-1.png" title="plot of chunk unnamed-chunk-11" alt="plot of chunk unnamed-chunk-11" class="plot" /></div></div>
+</div><div class="rimage default"><img src="figure/unnamed-chunk-11-1.png" alt="plot of chunk unnamed-chunk-11" class="plot" /></div></div>
     <p>
     We get the same result in the examples above because, 
     when we draw the shapes as a group, we begin with a temporary
@@ -395,7 +393,7 @@ Monday 30 May 2022
 <span class="hl kwd">pushViewport</span><span class="hl std">(</span><span class="hl kwd">viewport</span><span class="hl std">(</span><span class="hl kwc">mask</span><span class="hl std">=mask))</span>
 <span class="hl kwd">grid.draw</span><span class="hl std">(gt)</span>
 </pre></div>
-</div><div class="rimage default"><img src="figure/unnamed-chunk-12-1.png" title="plot of chunk unnamed-chunk-12" alt="plot of chunk unnamed-chunk-12" class="plot" /></div></div>
+</div><div class="rimage default"><img src="figure/unnamed-chunk-12-1.png" alt="plot of chunk unnamed-chunk-12" class="plot" /></div></div>
     <p>
     Now we draw the shapes as a group.
     As before, the text is drawn and a viewport is pushed to enforce
@@ -414,7 +412,7 @@ Monday 30 May 2022
 <span class="hl kwd">pushViewport</span><span class="hl std">(</span><span class="hl kwd">viewport</span><span class="hl std">(</span><span class="hl kwc">mask</span><span class="hl std">=mask))</span>
 <span class="hl kwd">grid.group</span><span class="hl std">(gt)</span>
 </pre></div>
-</div><div class="rimage default"><img src="figure/unnamed-chunk-13-1.png" title="plot of chunk unnamed-chunk-13" alt="plot of chunk unnamed-chunk-13" class="plot" /></div></div>
+</div><div class="rimage default"><img src="figure/unnamed-chunk-13-1.png" alt="plot of chunk unnamed-chunk-13" class="plot" /></div></div>
     <h3>Compositing and blend modes</h3>
     <p>
     Another way that we can get a different result from drawing shapes
@@ -442,23 +440,23 @@ Monday 30 May 2022
     but now, within the group, we draw the rectangle first 
     (as <code>dst</code>) 
     and then the circle (as <code>src</code>), 
-    using a <code>"clear"</code> operator.
-    With this operator, the new shape "clears" the previous drawing
+    using a <code>"dest.out"</code> operator.
+    With this operator, the new shape removes the previous drawing
     wherever there is an overlap.  In this case, 
     drawing the circle over the rectangle takes a bite out of
     the bottom-right corner of
-    the rectangle.  With the <code>"clear"</code> operator, 
+    the rectangle.  With the <code>"dest.out"</code> operator, 
     the <code>src</code> is not drawn at all.
   </p>
-<div class="chunk" id="unnamed-chunk-14"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl kwd">grid.group</span><span class="hl std">(c,</span> <span class="hl str">&quot;clear&quot;</span><span class="hl std">, r)</span>
+<div class="chunk" id="unnamed-chunk-14"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl kwd">grid.group</span><span class="hl std">(c,</span> <span class="hl str">&quot;dest.out&quot;</span><span class="hl std">, r)</span>
 </pre></div>
-</div><div class="rimage default"><img src="figure/unnamed-chunk-14-1.png" title="plot of chunk unnamed-chunk-14" alt="plot of chunk unnamed-chunk-14" class="plot" /></div></div>
+</div><div class="rimage default"><img src="figure/unnamed-chunk-14-1.png" alt="plot of chunk unnamed-chunk-14" class="plot" /></div></div>
     <p>
     By default, the <code>dst</code> is a fully transparent rectangle,
     but we can easily specify a different "backdrop" for a group.
     The following code specifies a grey filled rectangle as the
     <code>dst</code> and then draws the gTree consisting of the
-    rectangle and the circle on top, using a <code>"clear"</code>
+    rectangle and the circle on top, using a <code>"dest.out"</code>
     operator.  The result is a hole punched in the grey rectangle
     based on the black rectangle and the black circle.
     To show that the result of drawing this group is NOT the
@@ -469,9 +467,9 @@ Monday 30 May 2022
     have punched in the grey rectangle.
   </p>
 <div class="chunk" id="unnamed-chunk-15"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl kwd">grid.text</span><span class="hl std">(</span><span class="hl str">&quot;reveal&quot;</span><span class="hl std">,</span> <span class="hl kwc">gp</span><span class="hl std">=</span><span class="hl kwd">gpar</span><span class="hl std">(</span><span class="hl kwc">cex</span><span class="hl std">=</span><span class="hl num">4</span><span class="hl std">))</span>
-<span class="hl kwd">grid.group</span><span class="hl std">(gt,</span> <span class="hl str">&quot;clear&quot;</span><span class="hl std">,</span> <span class="hl kwd">rectGrob</span><span class="hl std">(</span><span class="hl kwc">gp</span><span class="hl std">=</span><span class="hl kwd">gpar</span><span class="hl std">(</span><span class="hl kwc">col</span><span class="hl std">=</span> <span class="hl num">NA</span><span class="hl std">,</span> <span class="hl kwc">fill</span><span class="hl std">=</span><span class="hl str">&quot;grey&quot;</span><span class="hl std">)))</span>
+<span class="hl kwd">grid.group</span><span class="hl std">(gt,</span> <span class="hl str">&quot;dest.out&quot;</span><span class="hl std">,</span> <span class="hl kwd">rectGrob</span><span class="hl std">(</span><span class="hl kwc">gp</span><span class="hl std">=</span><span class="hl kwd">gpar</span><span class="hl std">(</span><span class="hl kwc">col</span><span class="hl std">=</span> <span class="hl num">NA</span><span class="hl std">,</span> <span class="hl kwc">fill</span><span class="hl std">=</span><span class="hl str">&quot;grey&quot;</span><span class="hl std">)))</span>
 </pre></div>
-</div><div class="rimage default"><img src="figure/unnamed-chunk-15-1.png" title="plot of chunk unnamed-chunk-15" alt="plot of chunk unnamed-chunk-15" class="plot" /></div></div>
+</div><div class="rimage default"><img src="figure/unnamed-chunk-15-1.png" alt="plot of chunk unnamed-chunk-15" class="plot" /></div></div>
     <p>
     All of the <a href="https://cairographics.org/operators/">compositing 
     operators supported by the Cairo 
@@ -484,7 +482,7 @@ Monday 30 May 2022
     <code>"over"</code> operator corresponds to "Normal" blend mode
     and several other operators correspond to 
     <a href="https://www.adobe.com/content/dam/acom/en/devnet/pdf/pdfs/pdf_reference_archives/PDFReference.pdf#%5B%7B%22num%22%3A559%2C%22gen%22%3A0%7D%2C%7B%22name%22%3A%22XYZ%22%7D%2C130%2C572%2Cnull%5D">the other PDF blend modes</a>,
-    but the <code>"clear"</code> operator, for example, has no 
+    but the <code>"dest.out"</code> operator, for example, has no 
     corresponding blend mode.  Where there is no correspondence,
     the PDF device falls back to "Normal" blend mode.
   </p>
@@ -524,7 +522,7 @@ Monday 30 May 2022
 </div></div>
 <div class="chunk" id="unnamed-chunk-18"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl kwd">grid.group</span><span class="hl std">(gt2)</span>
 </pre></div>
-</div><div class="rimage default"><img src="figure/unnamed-chunk-18-1.png" title="plot of chunk unnamed-chunk-18" alt="plot of chunk unnamed-chunk-18" class="plot" /></div></div>
+</div><div class="rimage default"><img src="figure/unnamed-chunk-18-1.png" alt="plot of chunk unnamed-chunk-18" class="plot" /></div></div>
     <p>
     In the following code, we first call <code>grid.define()</code>
     to define the group and give it a name, <code>"group1"</code>.
@@ -555,7 +553,7 @@ Monday 30 May 2022
 <span class="hl kwd">grid.use</span><span class="hl std">(</span><span class="hl str">&quot;group1&quot;</span><span class="hl std">)</span>
 <span class="hl kwd">popViewport</span><span class="hl std">()</span>
 </pre></div>
-</div><div class="rimage default"><img src="figure/unnamed-chunk-19-1.png" title="plot of chunk unnamed-chunk-19" alt="plot of chunk unnamed-chunk-19" class="plot" /></div></div>
+</div><div class="rimage default"><img src="figure/unnamed-chunk-19-1.png" alt="plot of chunk unnamed-chunk-19" class="plot" /></div></div>
     <p>
     One potential benefit of this feature is efficiency on the graphics
     device.  For example, the PDF device records the group definition 
@@ -597,7 +595,7 @@ Monday 30 May 2022
 <span class="hl kwd">grid.use</span><span class="hl std">(</span><span class="hl str">&quot;group1&quot;</span><span class="hl std">)</span>
 <span class="hl kwd">popViewport</span><span class="hl std">()</span>
 </pre></div>
-</div><div class="rimage default"><img src="figure/unnamed-chunk-20-1.png" title="plot of chunk unnamed-chunk-20" alt="plot of chunk unnamed-chunk-20" class="plot" /></div></div>
+</div><div class="rimage default"><img src="figure/unnamed-chunk-20-1.png" alt="plot of chunk unnamed-chunk-20" class="plot" /></div></div>
     <p>
     It is important to note that these transformations are different
     from what would normally happen when we draw 'grid' objects.
@@ -621,7 +619,7 @@ Monday 30 May 2022
 <span class="hl kwd">grid.draw</span><span class="hl std">(gt2)</span>
 <span class="hl kwd">popViewport</span><span class="hl std">()</span>
 </pre></div>
-</div><div class="rimage default"><img src="figure/unnamed-chunk-21-1.png" title="plot of chunk unnamed-chunk-21" alt="plot of chunk unnamed-chunk-21" class="plot" /></div></div>
+</div><div class="rimage default"><img src="figure/unnamed-chunk-21-1.png" alt="plot of chunk unnamed-chunk-21" class="plot" /></div></div>
     <p>
     The behaviour of affine transformations is explored in more detail
     in the next section, along with several other aspects of 
@@ -657,7 +655,7 @@ Monday 30 May 2022
 <span class="hl kwd">grid.define</span><span class="hl std">(</span><span class="hl kwd">circleGrob</span><span class="hl std">(),</span> <span class="hl kwc">name</span><span class="hl std">=</span><span class="hl str">&quot;a&quot;</span><span class="hl std">)</span>
 <span class="hl kwd">grid.use</span><span class="hl std">(</span><span class="hl str">&quot;a&quot;</span><span class="hl std">)</span>
 </pre></div>
-</div><div class="rimage default"><img src="figure/unnamed-chunk-22-1.png" title="plot of chunk unnamed-chunk-22" alt="plot of chunk unnamed-chunk-22" class="plot" /></div></div>
+</div><div class="rimage default"><img src="figure/unnamed-chunk-22-1.png" alt="plot of chunk unnamed-chunk-22" class="plot" /></div></div>
     <p>
     Group definitions are usually erased at the start of a new page.
     However, the <code>grid.newpage()</code> function has a 
@@ -718,7 +716,7 @@ Monday 30 May 2022
 <span class="hl kwd">grid.use</span><span class="hl std">(</span><span class="hl str">&quot;c&quot;</span><span class="hl std">)</span>
 <span class="hl kwd">popViewport</span><span class="hl std">()</span>
 </pre></div>
-</div><div class="rimage default"><img src="figure/unnamed-chunk-23-1.png" title="plot of chunk unnamed-chunk-23" alt="plot of chunk unnamed-chunk-23" class="plot" /></div></div>
+</div><div class="rimage default"><img src="figure/unnamed-chunk-23-1.png" alt="plot of chunk unnamed-chunk-23" class="plot" /></div></div>
     <h3>Compositing and blend modes</h3>
     <p>
     The examples in the <a href="#api">User API</a> Section involved only
@@ -765,7 +763,7 @@ Monday 30 May 2022
 <span class="hl std">dst</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">circleGrob</span><span class="hl std">(</span><span class="hl num">1</span><span class="hl opt">:</span><span class="hl num">2</span><span class="hl opt">/</span><span class="hl num">5</span><span class="hl std">,</span> <span class="hl kwc">r</span><span class="hl std">=</span><span class="hl num">.2</span><span class="hl std">,</span> <span class="hl kwc">gp</span><span class="hl std">=</span><span class="hl kwd">gpar</span><span class="hl std">(</span><span class="hl kwc">col</span><span class="hl std">=</span><span class="hl num">NA</span><span class="hl std">,</span> <span class="hl kwc">fill</span><span class="hl std">=</span><span class="hl num">3</span><span class="hl std">))</span>
 <span class="hl kwd">grid.group</span><span class="hl std">(src,</span> <span class="hl str">&quot;xor&quot;</span><span class="hl std">, dst)</span>
 </pre></div>
-</div><div class="rimage default"><img src="figure/unnamed-chunk-24-1.png" title="plot of chunk unnamed-chunk-24" alt="plot of chunk unnamed-chunk-24" class="plot" /></div></div>
+</div><div class="rimage default"><img src="figure/unnamed-chunk-24-1.png" alt="plot of chunk unnamed-chunk-24" class="plot" /></div></div>
     <p>
     The following code shows how we can isolate <code>src</code>
     so that the two red circles are combined using the default
@@ -776,7 +774,7 @@ Monday 30 May 2022
   </p>
 <div class="chunk" id="unnamed-chunk-25"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl kwd">grid.group</span><span class="hl std">(</span><span class="hl kwd">groupGrob</span><span class="hl std">(src),</span> <span class="hl str">&quot;xor&quot;</span><span class="hl std">, dst)</span>
 </pre></div>
-</div><div class="rimage default"><img src="figure/unnamed-chunk-25-1.png" title="plot of chunk unnamed-chunk-25" alt="plot of chunk unnamed-chunk-25" class="plot" /></div></div>
+</div><div class="rimage default"><img src="figure/unnamed-chunk-25-1.png" alt="plot of chunk unnamed-chunk-25" class="plot" /></div></div>
     <p>
     The following code demonstrates that the <code>op</code>
     operator is in effect even when <code>dst</code> is <code>NULL</code>.
@@ -786,7 +784,7 @@ Monday 30 May 2022
   </p>
 <div class="chunk" id="unnamed-chunk-26"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl kwd">grid.group</span><span class="hl std">(src,</span> <span class="hl str">&quot;xor&quot;</span><span class="hl std">)</span>
 </pre></div>
-</div><div class="rimage default"><img src="figure/unnamed-chunk-26-1.png" title="plot of chunk unnamed-chunk-26" alt="plot of chunk unnamed-chunk-26" class="plot" /></div></div>
+</div><div class="rimage default"><img src="figure/unnamed-chunk-26-1.png" alt="plot of chunk unnamed-chunk-26" class="plot" /></div></div>
     <h3>Combining graphics features</h3>
     <p>
     The <a href="#api">User API</a> Section described how groups can be used
@@ -809,7 +807,7 @@ Monday 30 May 2022
     <p>
     The following code shows that a group can be the basis for a 
     tiling pattern.  We create a group that combines a rotated rectangle
-    on a black circle using the "clear" operator (creating a diamond-shaped
+    on a black circle using the "dest.out" operator (creating a diamond-shaped
     hole in the circle) and then use that group as a repeating pattern to fill
     a rectangle.  A red horizontal line is drawn first to illustrate that
     the diamond shape is a hole in the circle, not a white diamond
@@ -817,20 +815,23 @@ Monday 30 May 2022
   </p>
 <div class="chunk" id="unnamed-chunk-27"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">gp</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">groupGrob</span><span class="hl std">(</span><span class="hl kwd">rectGrob</span><span class="hl std">(</span><span class="hl kwc">width</span><span class="hl std">=</span><span class="hl num">.1</span><span class="hl std">,</span> <span class="hl kwc">height</span><span class="hl std">=</span><span class="hl num">.1</span><span class="hl std">,</span> <span class="hl kwc">gp</span><span class="hl std">=</span><span class="hl kwd">gpar</span><span class="hl std">(</span><span class="hl kwc">fill</span><span class="hl std">=</span><span class="hl str">&quot;black&quot;</span><span class="hl std">),</span>
                          <span class="hl kwc">vp</span><span class="hl std">=</span><span class="hl kwd">viewport</span><span class="hl std">(</span><span class="hl kwc">angle</span><span class="hl std">=</span><span class="hl num">45</span><span class="hl std">)),</span>
-                <span class="hl str">&quot;clear&quot;</span><span class="hl std">,</span>
+                <span class="hl str">&quot;dest.out&quot;</span><span class="hl std">,</span>
                 <span class="hl kwd">circleGrob</span><span class="hl std">(</span><span class="hl kwc">r</span><span class="hl std">=</span><span class="hl num">.1</span><span class="hl std">,</span> <span class="hl kwc">gp</span><span class="hl std">=</span><span class="hl kwd">gpar</span><span class="hl std">(</span><span class="hl kwc">fill</span><span class="hl std">=</span><span class="hl str">&quot;black&quot;</span><span class="hl std">)))</span>
 <span class="hl std">pat</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">pattern</span><span class="hl std">(gp,</span> <span class="hl kwc">width</span><span class="hl std">=</span><span class="hl num">.25</span><span class="hl std">,</span> <span class="hl kwc">height</span><span class="hl std">=</span><span class="hl num">.25</span><span class="hl std">,</span> <span class="hl kwc">extend</span><span class="hl std">=</span><span class="hl str">&quot;repeat&quot;</span><span class="hl std">)</span>
 <span class="hl kwd">grid.segments</span><span class="hl std">(</span><span class="hl kwc">y0</span><span class="hl std">=</span><span class="hl num">.5</span><span class="hl std">,</span> <span class="hl kwc">y1</span><span class="hl std">=</span><span class="hl num">.5</span><span class="hl std">,</span> <span class="hl kwc">gp</span><span class="hl std">=</span><span class="hl kwd">gpar</span><span class="hl std">(</span><span class="hl kwc">col</span><span class="hl std">=</span><span class="hl num">2</span><span class="hl std">,</span> <span class="hl kwc">lwd</span><span class="hl std">=</span><span class="hl num">15</span><span class="hl std">))</span>
 <span class="hl kwd">grid.rect</span><span class="hl std">(</span><span class="hl kwc">width</span><span class="hl std">=</span><span class="hl num">.8</span><span class="hl std">,</span> <span class="hl kwc">height</span><span class="hl std">=</span><span class="hl num">.8</span><span class="hl std">,</span> <span class="hl kwc">gp</span><span class="hl std">=</span><span class="hl kwd">gpar</span><span class="hl std">(</span><span class="hl kwc">fill</span><span class="hl std">=pat))</span>
 </pre></div>
-</div><div class="rimage default"><img src="figure/unnamed-chunk-27-1.png" title="plot of chunk unnamed-chunk-27" alt="plot of chunk unnamed-chunk-27" class="plot" /></div></div>
+</div><div class="rimage default"><img src="figure/unnamed-chunk-27-1.png" alt="plot of chunk unnamed-chunk-27" class="plot" /></div></div>
     <p>
     The following code shows that a group can also be the basis for a mask.
-    We create a group that combines a semitransparent circle on a 
+    We create a group that combines a solid disk, a
+    semitransparent circle, and a 
     semitransparent rectangle, where the circle is more translucent than
-    the rectangle. The group uses
-    the "source" operator so that, where the circle
-    and the rectangle overlap, only the circle is drawn.
+    the rectangle. The group consists of the circle "over" a sub-group
+    that consists of the disk "dest.out" the rectangle; in
+    the sub-group, the disk creates a hole in the rectangle.
+    The overal group consists of the rectangle except where the circle
+    and the rectangle overlap, in which case the circle is drawn.
     This produces a semitransparent rectangle with a more translucent 
     circle in its centre.  We push a viewport with this group as the mask
     and draw a series of thick, horizontal, green lines with the result
@@ -839,14 +840,17 @@ Monday 30 May 2022
     A red diagonal line is drawn first to illustrate that the green lines
     are semitransparent.
   </p>
-<div class="chunk" id="unnamed-chunk-28"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">gp</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">groupGrob</span><span class="hl std">(</span><span class="hl kwd">circleGrob</span><span class="hl std">(</span><span class="hl kwc">r</span><span class="hl std">=</span><span class="hl num">.3</span><span class="hl std">,</span> <span class="hl kwc">gp</span><span class="hl std">=</span><span class="hl kwd">gpar</span><span class="hl std">(</span><span class="hl kwc">col</span><span class="hl std">=</span><span class="hl num">NA</span><span class="hl std">,</span> <span class="hl kwc">fill</span><span class="hl std">=</span><span class="hl kwd">rgb</span><span class="hl std">(</span><span class="hl num">0</span><span class="hl std">,</span><span class="hl num">0</span><span class="hl std">,</span><span class="hl num">0</span><span class="hl std">,</span><span class="hl num">.3</span><span class="hl std">))),</span>
-                <span class="hl str">&quot;source&quot;</span><span class="hl std">,</span>
-                <span class="hl kwd">rectGrob</span><span class="hl std">(</span><span class="hl kwc">gp</span><span class="hl std">=</span><span class="hl kwd">gpar</span><span class="hl std">(</span><span class="hl kwc">fill</span><span class="hl std">=</span><span class="hl kwd">rgb</span><span class="hl std">(</span><span class="hl num">0</span><span class="hl std">,</span><span class="hl num">0</span><span class="hl std">,</span><span class="hl num">0</span><span class="hl std">,</span><span class="hl num">.7</span><span class="hl std">))))</span>
+<div class="chunk" id="unnamed-chunk-28"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">solid</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">circleGrob</span><span class="hl std">(</span><span class="hl kwc">r</span><span class="hl std">=</span><span class="hl num">.3</span><span class="hl std">,</span> <span class="hl kwc">gp</span><span class="hl std">=</span><span class="hl kwd">gpar</span><span class="hl std">(</span><span class="hl kwc">col</span><span class="hl std">=</span><span class="hl num">NA</span><span class="hl std">,</span> <span class="hl kwc">fill</span><span class="hl std">=</span><span class="hl str">&quot;black&quot;</span><span class="hl std">))</span>
+<span class="hl std">circle</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">circleGrob</span><span class="hl std">(</span><span class="hl kwc">r</span><span class="hl std">=</span><span class="hl num">.3</span><span class="hl std">,</span> <span class="hl kwc">gp</span><span class="hl std">=</span><span class="hl kwd">gpar</span><span class="hl std">(</span><span class="hl kwc">col</span><span class="hl std">=</span><span class="hl num">NA</span><span class="hl std">,</span> <span class="hl kwc">fill</span><span class="hl std">=</span><span class="hl kwd">rgb</span><span class="hl std">(</span><span class="hl num">0</span><span class="hl std">,</span><span class="hl num">0</span><span class="hl std">,</span><span class="hl num">0</span><span class="hl std">,</span><span class="hl num">.3</span><span class="hl std">)))</span>
+<span class="hl std">rectangle</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">rectGrob</span><span class="hl std">(</span><span class="hl kwc">gp</span><span class="hl std">=</span><span class="hl kwd">gpar</span><span class="hl std">(</span><span class="hl kwc">fill</span><span class="hl std">=</span><span class="hl kwd">rgb</span><span class="hl std">(</span><span class="hl num">0</span><span class="hl std">,</span><span class="hl num">0</span><span class="hl std">,</span><span class="hl num">0</span><span class="hl std">,</span><span class="hl num">.7</span><span class="hl std">)))</span>
+<span class="hl std">gp</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">groupGrob</span><span class="hl std">(circle,</span>
+                <span class="hl str">&quot;over&quot;</span><span class="hl std">,</span>
+                <span class="hl kwd">groupGrob</span><span class="hl std">(solid,</span> <span class="hl str">&quot;dest.out&quot;</span><span class="hl std">, rectangle))</span>
 <span class="hl kwd">grid.segments</span><span class="hl std">(</span><span class="hl kwc">gp</span><span class="hl std">=</span><span class="hl kwd">gpar</span><span class="hl std">(</span><span class="hl kwc">col</span><span class="hl std">=</span><span class="hl num">2</span><span class="hl std">,</span> <span class="hl kwc">lwd</span><span class="hl std">=</span><span class="hl num">20</span><span class="hl std">))</span>
 <span class="hl kwd">pushViewport</span><span class="hl std">(</span><span class="hl kwd">viewport</span><span class="hl std">(</span><span class="hl kwc">mask</span><span class="hl std">=gp))</span>
 <span class="hl kwd">grid.segments</span><span class="hl std">(</span><span class="hl num">0</span><span class="hl std">,</span> <span class="hl num">1</span><span class="hl opt">:</span><span class="hl num">4</span><span class="hl opt">/</span><span class="hl num">5</span><span class="hl std">,</span> <span class="hl num">1</span><span class="hl std">,</span> <span class="hl num">1</span><span class="hl opt">:</span><span class="hl num">4</span><span class="hl opt">/</span><span class="hl num">5</span><span class="hl std">,</span> <span class="hl kwc">gp</span><span class="hl std">=</span><span class="hl kwd">gpar</span><span class="hl std">(</span><span class="hl kwc">col</span><span class="hl std">=</span><span class="hl num">3</span><span class="hl std">,</span> <span class="hl kwc">lwd</span><span class="hl std">=</span><span class="hl num">20</span><span class="hl std">))</span>
 </pre></div>
-</div><div class="rimage default"><img src="figure/unnamed-chunk-28-1.png" title="plot of chunk unnamed-chunk-28" alt="plot of chunk unnamed-chunk-28" class="plot" /></div></div>
+</div><div class="rimage default"><img src="figure/unnamed-chunk-28-1.png" alt="plot of chunk unnamed-chunk-28" class="plot" /></div></div>
     <h3>Affine transformations</h3>
     <p>
     As hinted at in the <a href="#api">User API</a> Section, group affine
@@ -899,7 +903,7 @@ Monday 30 May 2022
 <span class="hl kwd">grid.draw</span><span class="hl std">(gt1)</span>
 <span class="hl kwd">popViewport</span><span class="hl std">()</span>
 </pre></div>
-</div><div class="rimage default"><img src="figure/unnamed-chunk-30-1.png" title="plot of chunk unnamed-chunk-30" alt="plot of chunk unnamed-chunk-30" class="plot" /></div></div>
+</div><div class="rimage default"><img src="figure/unnamed-chunk-30-1.png" alt="plot of chunk unnamed-chunk-30" class="plot" /></div></div>
     <p>
     The next code draws the second gTree normally, 
     again in both a square viewport and a wider viewport.
@@ -919,7 +923,7 @@ Monday 30 May 2022
 <span class="hl kwd">grid.draw</span><span class="hl std">(gt2)</span>
 <span class="hl kwd">popViewport</span><span class="hl std">()</span>
 </pre></div>
-</div><div class="rimage default"><img src="figure/unnamed-chunk-31-1.png" title="plot of chunk unnamed-chunk-31" alt="plot of chunk unnamed-chunk-31" class="plot" /></div></div>
+</div><div class="rimage default"><img src="figure/unnamed-chunk-31-1.png" alt="plot of chunk unnamed-chunk-31" class="plot" /></div></div>
     <p>
     The next code demonstrates the different behaviour of group
     affine transformations.
@@ -950,7 +954,7 @@ Monday 30 May 2022
 <span class="hl kwd">grid.use</span><span class="hl std">(</span><span class="hl str">&quot;group&quot;</span><span class="hl std">)</span>
 <span class="hl kwd">popViewport</span><span class="hl std">()</span>
 </pre></div>
-</div><div class="rimage default"><img src="figure/unnamed-chunk-32-1.png" title="plot of chunk unnamed-chunk-32" alt="plot of chunk unnamed-chunk-32" class="plot" /></div></div>
+</div><div class="rimage default"><img src="figure/unnamed-chunk-32-1.png" alt="plot of chunk unnamed-chunk-32" class="plot" /></div></div>
     <p>
     The "normal" 'grid' behaviour is useful because we do not,
     for example,
@@ -979,7 +983,7 @@ Monday 30 May 2022
 <span class="hl kwd">grid.use</span><span class="hl std">(</span><span class="hl str">&quot;rect&quot;</span><span class="hl std">)</span>
 <span class="hl kwd">popViewport</span><span class="hl std">()</span>
 </pre></div>
-</div><div class="rimage default"><img src="figure/unnamed-chunk-33-1.png" title="plot of chunk unnamed-chunk-33" alt="plot of chunk unnamed-chunk-33" class="plot" /></div></div>
+</div><div class="rimage default"><img src="figure/unnamed-chunk-33-1.png" alt="plot of chunk unnamed-chunk-33" class="plot" /></div></div>
     <p>
     Another issue that requires more explanation is the precise 
     transformation that is induced by defining a group within
@@ -1020,7 +1024,7 @@ Monday 30 May 2022
 <span class="hl kwd">grid.use</span><span class="hl std">(</span><span class="hl str">&quot;r&quot;</span><span class="hl std">)</span>
 <span class="hl kwd">popViewport</span><span class="hl std">()</span>
 </pre></div>
-</div><div class="rimage default"><img src="figure/unnamed-chunk-34-1.png" title="plot of chunk unnamed-chunk-34" alt="plot of chunk unnamed-chunk-34" class="plot" /></div></div>
+</div><div class="rimage default"><img src="figure/unnamed-chunk-34-1.png" alt="plot of chunk unnamed-chunk-34" class="plot" /></div></div>
     <p>
     The translation is induced this way because it makes it easier
     to position the reuse of a group relative to a specific location
@@ -1051,7 +1055,7 @@ Monday 30 May 2022
 <span class="hl kwd">grid.use</span><span class="hl std">(</span><span class="hl str">&quot;r&quot;</span><span class="hl std">)</span>
 <span class="hl kwd">popViewport</span><span class="hl std">()</span>
 </pre></div>
-</div><div class="rimage default"><img src="figure/unnamed-chunk-35-1.png" title="plot of chunk unnamed-chunk-35" alt="plot of chunk unnamed-chunk-35" class="plot" /></div></div>
+</div><div class="rimage default"><img src="figure/unnamed-chunk-35-1.png" alt="plot of chunk unnamed-chunk-35" class="plot" /></div></div>
     <p>
     The scaling and rotation transformations that are induced by
     differences in viewport size and angle are more straightforward,
@@ -1146,7 +1150,7 @@ Monday 30 May 2022
                                                <span class="hl kwc">shear</span><span class="hl std">=</span><span class="hl kwd">groupShear</span><span class="hl std">(</span><span class="hl kwc">sx</span><span class="hl std">=</span><span class="hl num">.5</span><span class="hl std">,</span> <span class="hl kwc">sy</span><span class="hl std">=</span><span class="hl num">.5</span><span class="hl std">)))</span>
 <span class="hl kwd">popViewport</span><span class="hl std">()</span>
 </pre></div>
-</div><div class="rimage default"><img src="figure/unnamed-chunk-36-1.png" title="plot of chunk unnamed-chunk-36" alt="plot of chunk unnamed-chunk-36" class="plot" /></div></div>
+</div><div class="rimage default"><img src="figure/unnamed-chunk-36-1.png" alt="plot of chunk unnamed-chunk-36" class="plot" /></div></div>
     <p>
     Another transformation that cannot be induced by differences between
     viewports is an inversion of the x-scaling or y-scaling.
@@ -1194,7 +1198,7 @@ Monday 30 May 2022
                                                               <span class="hl kwc">flipY</span><span class="hl std">=</span><span class="hl num">TRUE</span><span class="hl std">)))</span>
 <span class="hl kwd">popViewport</span><span class="hl std">()</span>
 </pre></div>
-</div><div class="rimage default"><img src="figure/unnamed-chunk-37-1.png" title="plot of chunk unnamed-chunk-37" alt="plot of chunk unnamed-chunk-37" class="plot" /></div></div>
+</div><div class="rimage default"><img src="figure/unnamed-chunk-37-1.png" alt="plot of chunk unnamed-chunk-37" class="plot" /></div></div>
     <p>
     It is also possible to specify a custom transformation 
     in order to simplify the transformation that is induced
@@ -1223,7 +1227,7 @@ Monday 30 May 2022
          <span class="hl kwc">trans</span><span class="hl std">=viewportTranslate)</span>
 <span class="hl kwd">popViewport</span><span class="hl std">()</span>
 </pre></div>
-</div><div class="rimage default"><img src="figure/unnamed-chunk-38-1.png" title="plot of chunk unnamed-chunk-38" alt="plot of chunk unnamed-chunk-38" class="plot" /></div></div>
+</div><div class="rimage default"><img src="figure/unnamed-chunk-38-1.png" alt="plot of chunk unnamed-chunk-38" class="plot" /></div></div>
     <p>
     It is also possible to transform a group without having to
     use it in a different viewport;  we can just provide a 
@@ -1251,7 +1255,7 @@ Monday 30 May 2022
 <span class="hl kwd">grid.use</span><span class="hl std">(</span><span class="hl str">&quot;r&quot;</span><span class="hl std">)</span>
 <span class="hl kwd">grid.use</span><span class="hl std">(</span><span class="hl str">&quot;r&quot;</span><span class="hl std">,</span> <span class="hl kwc">transform</span><span class="hl std">=</span><span class="hl kwa">function</span><span class="hl std">(</span><span class="hl kwc">...</span><span class="hl std">)</span> <span class="hl kwd">groupRotate</span><span class="hl std">(</span><span class="hl num">30</span><span class="hl std">))</span>
 </pre></div>
-</div><div class="rimage default"><img src="figure/unnamed-chunk-39-1.png" title="plot of chunk unnamed-chunk-39" alt="plot of chunk unnamed-chunk-39" class="plot" /></div></div>
+</div><div class="rimage default"><img src="figure/unnamed-chunk-39-1.png" alt="plot of chunk unnamed-chunk-39" class="plot" /></div></div>
     <p>
     If we want to rotate the rectangle (in place), we need to
     translate to the device origin, rotate, and translate back.
@@ -1273,7 +1277,7 @@ Monday 30 May 2022
 <span class="hl std">}</span>
 <span class="hl kwd">grid.use</span><span class="hl std">(</span><span class="hl str">&quot;r&quot;</span><span class="hl std">,</span> <span class="hl kwc">transform</span><span class="hl std">=trans)</span>
 </pre></div>
-</div><div class="rimage default"><img src="figure/unnamed-chunk-40-1.png" title="plot of chunk unnamed-chunk-40" alt="plot of chunk unnamed-chunk-40" class="plot" /></div></div>
+</div><div class="rimage default"><img src="figure/unnamed-chunk-40-1.png" alt="plot of chunk unnamed-chunk-40" class="plot" /></div></div>
     <p>
     To further complicate matters, that transformation is only correct
     for when the transformation is called with <code>device=TRUE</code>
@@ -1292,7 +1296,7 @@ Monday 30 May 2022
 <span class="hl kwd">pushViewport</span><span class="hl std">(</span><span class="hl kwd">viewport</span><span class="hl std">(</span><span class="hl kwc">angle</span><span class="hl std">=</span><span class="hl num">30</span><span class="hl std">))</span>
 <span class="hl kwd">grid.use</span><span class="hl std">(</span><span class="hl str">&quot;r&quot;</span><span class="hl std">)</span>
 </pre></div>
-</div><div class="rimage default"><img src="figure/unnamed-chunk-41-1.png" title="plot of chunk unnamed-chunk-41" alt="plot of chunk unnamed-chunk-41" class="plot" /></div></div>
+</div><div class="rimage default"><img src="figure/unnamed-chunk-41-1.png" alt="plot of chunk unnamed-chunk-41" class="plot" /></div></div>
     <h3>The <code>vp</code> argument</h3>
     <p>
     All of the functions <code>grid.group()</code>, 
@@ -1315,7 +1319,7 @@ Monday 30 May 2022
 <div class="chunk" id="unnamed-chunk-43"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl kwd">grid.group</span><span class="hl std">(</span><span class="hl kwd">grobTree</span><span class="hl std">(</span><span class="hl kwd">rectGrob</span><span class="hl std">(),</span> <span class="hl kwd">circleGrob</span><span class="hl std">()),</span>
            <span class="hl kwc">vp</span><span class="hl std">=vp)</span>
 </pre></div>
-</div><div class="rimage default"><img src="figure/unnamed-chunk-43-1.png" title="plot of chunk unnamed-chunk-43" alt="plot of chunk unnamed-chunk-43" class="plot" /></div></div>
+</div><div class="rimage default"><img src="figure/unnamed-chunk-43-1.png" alt="plot of chunk unnamed-chunk-43" class="plot" /></div></div>
     <p>
     Normally, when we use <code>grid.define()</code> and
     <code>grid.use()</code>, if we call them within the same
@@ -1336,7 +1340,7 @@ Monday 30 May 2022
             <span class="hl kwc">name</span><span class="hl std">=</span><span class="hl str">&quot;groupvp&quot;</span><span class="hl std">)</span>
 <span class="hl kwd">grid.use</span><span class="hl std">(</span><span class="hl str">&quot;groupvp&quot;</span><span class="hl std">)</span>
 </pre></div>
-</div><div class="rimage default"><img src="figure/unnamed-chunk-44-1.png" title="plot of chunk unnamed-chunk-44" alt="plot of chunk unnamed-chunk-44" class="plot" /></div></div>
+</div><div class="rimage default"><img src="figure/unnamed-chunk-44-1.png" alt="plot of chunk unnamed-chunk-44" class="plot" /></div></div>
     <p>
     We can of course get the untransformed group by specifying the
     same viewport via <code>vp</code> in the <code>grid.use()</code>
@@ -1349,7 +1353,7 @@ Monday 30 May 2022
 <span class="hl kwd">grid.use</span><span class="hl std">(</span><span class="hl str">&quot;groupvp&quot;</span><span class="hl std">,</span>
          <span class="hl kwc">vp</span><span class="hl std">=vp)</span>
 </pre></div>
-</div><div class="rimage default"><img src="figure/unnamed-chunk-45-1.png" title="plot of chunk unnamed-chunk-45" alt="plot of chunk unnamed-chunk-45" class="plot" /></div></div>
+</div><div class="rimage default"><img src="figure/unnamed-chunk-45-1.png" alt="plot of chunk unnamed-chunk-45" class="plot" /></div></div>
     <h3>
       <a name="ggplot">Treating a plot as a group</a>
     </h3>
@@ -1404,7 +1408,7 @@ Monday 30 May 2022
 <span class="hl kwd">popViewport</span><span class="hl std">()</span>
 <span class="hl kwd">grid.draw</span><span class="hl std">(g)</span>
 </pre></div>
-</div><div class="rimage default"><img src="figure/unnamed-chunk-47-1.png" title="plot of chunk unnamed-chunk-47" alt="plot of chunk unnamed-chunk-47" class="plot" /></div></div>
+</div><div class="rimage default"><img src="figure/unnamed-chunk-47-1.png" alt="plot of chunk unnamed-chunk-47" class="plot" /></div></div>
     <h3>Listing and editing groups</h3>
     <p>
     In simple situations, groups behave very much like a standard 'grid'
@@ -1436,7 +1440,7 @@ Monday 30 May 2022
 <div class="chunk" id="unnamed-chunk-49"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">gt</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">gTree</span><span class="hl std">(</span><span class="hl kwc">children</span><span class="hl std">=</span><span class="hl kwd">gList</span><span class="hl std">(r, c),</span> <span class="hl kwc">name</span><span class="hl std">=</span><span class="hl str">&quot;gTree&quot;</span><span class="hl std">)</span>
 <span class="hl kwd">grid.draw</span><span class="hl std">(gt)</span>
 </pre></div>
-</div><div class="rimage default"><img src="figure/unnamed-chunk-49-1.png" title="plot of chunk unnamed-chunk-49" alt="plot of chunk unnamed-chunk-49" class="plot" /></div><div class="rcode">
+</div><div class="rimage default"><img src="figure/unnamed-chunk-49-1.png" alt="plot of chunk unnamed-chunk-49" class="plot" /></div><div class="rcode">
 <div class="source"><pre class="knitr r"><span class="hl kwd">grid.ls</span><span class="hl std">()</span>
 </pre></div>
 <div class="output"><pre class="knitr r">  gTree
@@ -1452,7 +1456,7 @@ Monday 30 May 2022
 <div class="chunk" id="unnamed-chunk-50"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl kwd">grid.edit</span><span class="hl std">(</span><span class="hl str">&quot;r&quot;</span><span class="hl std">,</span> <span class="hl kwc">width</span><span class="hl std">=</span><span class="hl kwd">unit</span><span class="hl std">(</span><span class="hl num">.5</span><span class="hl std">,</span> <span class="hl str">&quot;npc&quot;</span><span class="hl std">))</span>
 </pre></div>
 </div></div>
-<div class="chunk" id="unnamed-chunk-51"><div class="rimage default"><img src="figure/unnamed-chunk-51-1.png" title="plot of chunk unnamed-chunk-51" alt="plot of chunk unnamed-chunk-51" class="plot" /></div></div>
+<div class="chunk" id="unnamed-chunk-51"><div class="rimage default"><img src="figure/unnamed-chunk-51-1.png" alt="plot of chunk unnamed-chunk-51" class="plot" /></div></div>
     <p>
     The following code creates a group equivalent of the gTree.
     In this group, the <code>src</code> is the circle and the 
@@ -1462,7 +1466,7 @@ Monday 30 May 2022
   </p>
 <div class="chunk" id="unnamed-chunk-52"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl kwd">grid.group</span><span class="hl std">(</span><span class="hl kwc">src</span><span class="hl std">=c,</span> <span class="hl kwc">dst</span><span class="hl std">=r,</span> <span class="hl kwc">name</span><span class="hl std">=</span><span class="hl str">&quot;group&quot;</span><span class="hl std">)</span>
 </pre></div>
-</div><div class="rimage default"><img src="figure/unnamed-chunk-52-1.png" title="plot of chunk unnamed-chunk-52" alt="plot of chunk unnamed-chunk-52" class="plot" /></div></div>
+</div><div class="rimage default"><img src="figure/unnamed-chunk-52-1.png" alt="plot of chunk unnamed-chunk-52" class="plot" /></div></div>
     <p>
     However, if we list the grobs in the image, all we can see
     is the group grob.
@@ -1487,11 +1491,11 @@ Monday 30 May 2022
 <div class="chunk" id="unnamed-chunk-55"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl kwd">grid.edit</span><span class="hl std">(</span><span class="hl str">&quot;group&quot;</span><span class="hl std">,</span> <span class="hl kwc">dst</span><span class="hl std">=</span><span class="hl kwd">editGrob</span><span class="hl std">(r,</span> <span class="hl kwc">width</span><span class="hl std">=</span><span class="hl kwd">unit</span><span class="hl std">(</span><span class="hl num">.5</span><span class="hl std">,</span> <span class="hl str">&quot;npc&quot;</span><span class="hl std">)))</span>
 </pre></div>
 </div></div>
-<div class="chunk" id="unnamed-chunk-56"><div class="rimage default"><img src="figure/unnamed-chunk-56-1.png" title="plot of chunk unnamed-chunk-56" alt="plot of chunk unnamed-chunk-56" class="plot" /></div></div>
+<div class="chunk" id="unnamed-chunk-56"><div class="rimage default"><img src="figure/unnamed-chunk-56-1.png" alt="plot of chunk unnamed-chunk-56" class="plot" /></div></div>
 <div class="chunk" id="unnamed-chunk-57"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl kwd">grid.edit</span><span class="hl std">(</span><span class="hl str">&quot;group&quot;</span><span class="hl std">,</span> <span class="hl kwc">op</span><span class="hl std">=</span><span class="hl str">&quot;xor&quot;</span><span class="hl std">)</span>
 </pre></div>
 </div></div>
-<div class="chunk" id="unnamed-chunk-58"><div class="rimage default"><img src="figure/unnamed-chunk-58-1.png" title="plot of chunk unnamed-chunk-58" alt="plot of chunk unnamed-chunk-58" class="plot" /></div></div>
+<div class="chunk" id="unnamed-chunk-58"><div class="rimage default"><img src="figure/unnamed-chunk-58-1.png" alt="plot of chunk unnamed-chunk-58" class="plot" /></div></div>
     <h3>Forcing groups</h3>
     <p>
     This section deals with more advanced 'grid' concepts
@@ -1510,7 +1514,7 @@ Monday 30 May 2022
 <div class="chunk" id="unnamed-chunk-59"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">g</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">ggplot</span><span class="hl std">(mtcars)</span> <span class="hl opt">+</span> <span class="hl kwd">geom_point</span><span class="hl std">(</span><span class="hl kwd">aes</span><span class="hl std">(disp, mpg))</span>
 <span class="hl kwd">plot</span><span class="hl std">(g)</span>
 </pre></div>
-</div><div class="rimage default"><img src="figure/unnamed-chunk-59-1.png" title="plot of chunk unnamed-chunk-59" alt="plot of chunk unnamed-chunk-59" class="plot" /></div><div class="rcode">
+</div><div class="rimage default"><img src="figure/unnamed-chunk-59-1.png" alt="plot of chunk unnamed-chunk-59" class="plot" /></div><div class="rcode">
 <div class="source"><pre class="knitr r"><span class="hl kwd">grid.ls</span><span class="hl std">()</span>
 </pre></div>
 <div class="output"><pre class="knitr r">  layout
@@ -1533,48 +1537,70 @@ Monday 30 May 2022
 <span class="hl kwd">grid.ls</span><span class="hl std">()</span>
 </pre></div>
 </div></div>
-<div class="chunk" id="unnamed-chunk-61"><div class="rimage default"><img src="figure/unnamed-chunk-61-1.png" title="plot of chunk unnamed-chunk-61" alt="plot of chunk unnamed-chunk-61" class="plot" /></div><div class="rcode">
+<div class="chunk" id="unnamed-chunk-61"><div class="rimage default"><img src="figure/unnamed-chunk-61-1.png" alt="plot of chunk unnamed-chunk-61" class="plot" /></div><div class="rcode">
 <div class="output"><pre class="knitr r">  layout
     background.1-9-12-1
+      plot.background..rect.492
     panel.7-5-7-5
-      grill.gTree.460
-        panel.background..rect.451
-        panel.grid.minor.y..polyline.453
-        panel.grid.minor.x..polyline.455
-        panel.grid.major.y..polyline.457
-        panel.grid.major.x..polyline.459
-      NULL
-      geom_point.points.447
-      NULL
-      panel.border..zeroGrob.448
+      panel-1.gTree.472
+        grill.gTree.470
+          panel.background..rect.461
+          panel.grid.minor.y..polyline.463
+          panel.grid.minor.x..polyline.465
+          panel.grid.major.y..polyline.467
+          panel.grid.major.x..polyline.469
+        NULL
+        geom_point.points.457
+        NULL
+        panel.border..zeroGrob.458
     spacer.8-6-8-6
+      NULL
     spacer.8-4-8-4
+      NULL
     spacer.6-6-6-6
+      NULL
     spacer.6-4-6-4
+      NULL
     axis-t.6-5-6-5
+      NULL
     axis-l.7-4-7-4
-      NULL
-      axis
-        axis.1-1-1-1
-          GRID.text.467
-        axis.1-2-1-2
+      GRID.absoluteGrob.480
+        NULL
+        axis
+          axis.1-1-1-1
+            GRID.titleGrob.478
+              GRID.text.477
+          axis.1-2-1-2
+            GRID.polyline.479
     axis-r.7-6-7-6
-    axis-b.8-5-8-5
       NULL
-      axis
-        axis.1-1-1-1
-        axis.2-1-2-1
-          GRID.text.463
+    axis-b.8-5-8-5
+      GRID.absoluteGrob.476
+        NULL
+        axis
+          axis.1-1-1-1
+            GRID.polyline.475
+          axis.2-1-2-1
+            GRID.titleGrob.474
+              GRID.text.473
     xlab-t.5-5-5-5
+      NULL
     xlab-b.9-5-9-5
-      GRID.text.471
+      axis.title.x.bottom..titleGrob.483
+        GRID.text.481
     ylab-l.7-3-7-3
-      GRID.text.474
+      axis.title.y.left..titleGrob.486
+        GRID.text.484
     ylab-r.7-7-7-7
+      NULL
     subtitle.4-5-4-5
+      plot.subtitle..zeroGrob.488
     title.3-5-3-5
+      plot.title..zeroGrob.487
     caption.10-5-10-5
+      plot.caption..zeroGrob.490
     tag.2-2-2-2
+      plot.tag..zeroGrob.489
 </pre></div>
 </div></div>
     <p>
@@ -1584,7 +1610,7 @@ Monday 30 May 2022
 <div class="chunk" id="unnamed-chunk-62"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl kwd">grid.edit</span><span class="hl std">(</span><span class="hl str">&quot;points&quot;</span><span class="hl std">,</span> <span class="hl kwc">grep</span><span class="hl std">=</span><span class="hl num">TRUE</span><span class="hl std">,</span> <span class="hl kwc">gp</span><span class="hl std">=</span><span class="hl kwd">gpar</span><span class="hl std">(</span><span class="hl kwc">col</span><span class="hl std">=</span><span class="hl num">2</span><span class="hl opt">:</span><span class="hl num">3</span><span class="hl std">))</span>
 </pre></div>
 </div></div>
-<div class="chunk" id="unnamed-chunk-63"><div class="rimage default"><img src="figure/unnamed-chunk-63-1.png" title="plot of chunk unnamed-chunk-63" alt="plot of chunk unnamed-chunk-63" class="plot" /></div></div>
+<div class="chunk" id="unnamed-chunk-63"><div class="rimage default"><img src="figure/unnamed-chunk-63-1.png" alt="plot of chunk unnamed-chunk-63" class="plot" /></div></div>
     <p>
     It is possible to create a group based on a grob that only
     generates its content when it is drawn.
@@ -1627,10 +1653,10 @@ Monday 30 May 2022
                      <span class="hl kwc">gp</span><span class="hl std">=</span><span class="hl kwd">gpar</span><span class="hl std">(</span><span class="hl kwc">col</span><span class="hl std">=</span><span class="hl num">2</span><span class="hl opt">:</span><span class="hl num">3</span><span class="hl std">))</span>
 <span class="hl kwd">grid.group</span><span class="hl std">(ggrobMod)</span>
 </pre></div>
-</div><div class="rimage default"><img src="figure/unnamed-chunk-66-1.png" title="plot of chunk unnamed-chunk-66" alt="plot of chunk unnamed-chunk-66" class="plot" /></div></div>
+</div><div class="rimage default"><img src="figure/unnamed-chunk-66-1.png" alt="plot of chunk unnamed-chunk-66" class="plot" /></div></div>
     <p>
     A slightly more difficult scenario arises when we want to 
-    edit the individual grobs within a group that someone else's
+    edit the individual grobs within a group that someone else's <!--'-->
     code has drawn.  In this case, we need to access the group,
     access the <code>src</code> grob within the group, force
     that <code>src</code> grob, modify the forced grob, and
@@ -1650,7 +1676,7 @@ Monday 30 May 2022
                    <span class="hl kwc">gp</span><span class="hl std">=</span><span class="hl kwd">gpar</span><span class="hl std">(</span><span class="hl kwc">col</span><span class="hl std">=</span><span class="hl num">2</span><span class="hl opt">:</span><span class="hl num">3</span><span class="hl std">))</span>
 <span class="hl kwd">grid.edit</span><span class="hl std">(</span><span class="hl str">&quot;group&quot;</span><span class="hl std">,</span> <span class="hl kwc">src</span><span class="hl std">=srcMod)</span>
 </pre></div>
-</div><div class="rimage default"><img src="figure/unnamed-chunk-67-1.png" title="plot of chunk unnamed-chunk-67" alt="plot of chunk unnamed-chunk-67" class="plot" /></div></div>
+</div><div class="rimage default"><img src="figure/unnamed-chunk-67-1.png" alt="plot of chunk unnamed-chunk-67" class="plot" /></div></div>
     <h2>
       <a name="device">4. Device API</a>
     </h2>
@@ -1926,9 +1952,9 @@ Monday 30 May 2022
     </h2>
     <p>
     The examples and discussion in this report relate to 
-    R version 4.2.0 (except for a couple of examples in the
-    Appendix which require the daily R-release snapshot from
-    2022-05-25, which will be part of R version 4.2.1).
+    R version 4.2.0.
+    The examples involving compositing operators now relate
+    to R version 4.3.0.
   </p>
     <p>
     This report was generated within a Docker container
@@ -2184,192 +2210,6 @@ Wilke, C. O. (2020).
 
 </dd>
     </dl>
-    <h2>
-      <a name="cairo-compositing">9. Appendix: Cairo Graphics Compositing Operators</a>
-    </h2>
-    <p>
-    This section records some explanations of the behaviour of 
-    compositing operators on Cairo-based graphics devices.
-    The main takeaway is to be careful when using a group as the source
-    for a "clear" or "source" compositing operation.
-    The information in this section explains why.
-  </p>
-    <p>
-    The Cairo Graphics model draws the current "source" onto the current
-    "surface", with the current "mask" determining where on the surface
-    the source is drawn, and the current "compositing operator" 
-    determining how the source is combined with the surface.
-  </p>
-    <p>
-    For example, by default, there is no mask, and the compositing operator
-    is "over", so the source is drawn on top of whatever is already
-    on the surface.  If the source is semitransparent, the source may not
-    completely obscure what is already on the surface.
-  </p>
-    <p>
-    There are three ways to draw, each of which specifies
-    a different sort of mask:
-  </p>
-    <ol>
-      <li>
-        <p>
-        We can create a "path", like a line or a circle or a polygon, and
-        then stroke or fill the path.  In this case,
-        the mask is based on the path;
-        the mask only allows the source to be drawn
-        on the border of the path when stroking or within the 
-        interior of the path when filling.        
-      </p>
-        <p>
-        This is what happens most of the time when we draw with 'grid'.
-        For example, a call to <code>grid.circle()</code> creates
-        a circular path and strokes that path (in black).  The current
-        source is "black" everywhere and the mask is the border of the circle.
-      </p>
-      </li>
-      <li>
-        <p>
-        We can "mask" the source. This means that we specify an explicit mask
-        (based on drawing on another surface) and the opaque regions
-        of that mask determine where the source is drawn on the surface.
-      </p>
-        <p>
-        This is what happens whenever we have specified a mask in 'grid',
-        e.g., by calling 
-        <code>pushViewport(viewport(mask = segmentsGrob()))</code>
-        and then calling <code>grid.circle()</code>.
-        The segments grob is drawn on another surface to create the mask
-        and then only the parts of the circle that overlap with the
-        segments are drawn on the main surface.
-      </p>
-      </li>
-      <li>
-        <p>
-        We can "paint" the source. This means that 
-        there is no mask, so the source is drawn over the entire
-        surface.
-      </p>
-        <p>
-        This is what happens whenever we draw a group with 'grid'
-        (as described in this document).  
-        The group is drawn on another surface and then it is copied,
-        in its entirety,
-        onto the main surface.
-      </p>
-      </li>
-    </ol>
-    <p>
-    There are many different compositing operators, but in almost all
-    cases when we draw with 'grid' 
-    we are using the "over" operator;  the source is drawn
-    on top of whatever is currently on the surface.
-  </p>
-    <p>
-    We can only make use of operators other than "over"
-    within a group, so the situation we are considering here is drawing
-    a path, or with a mask, or as a group, <em>within a group</em>
-    using the <code>grid.group()</code> function.
-    With this function, the <code>src</code> argument provides the source, the
-    <code>op</code> argument specifies the compositing operator,
-    and the <code>dst</code> argument specifies the surface
-    that we are drawing onto.
-  </p>
-    <p>
-    For most compositing operators, the three ways to draw produce
-    the same result.  
-    For example, the following output 
-    shows the results for the "over" and "xor" operators.
-  </p>
-    <p>
-    In each example below, the source is a red circle and the surface
-    contains a green circle.
-    On the top row, the source is just a circle grob, 
-    so the source is a (filled) "path" and the mask is just the circle.
-    On the middle row, we draw the same circle grob, but this time
-    within a viewport with a mask (based on the circle grob), 
-    so we "mask" the source and
-    the mask is just the circle.
-    On the bottom row, we draw the same circle grob, but this time
-    as a group, so we "paint" the source and the source is the
-    a transparent region the same size as the surface, with a
-    red circle on it (there is no mask).
-  </p>
-    <p>
-    In the left column below, the operator is "over", so the red circle
-    partially obscures the green circle.
-    In the right column, the operator is "xor", so the region
-    where the red and green circles overlap is not drawn.
-  </p>
-<div class="chunk" id="unnamed-chunk-68"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">src</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">circleGrob</span><span class="hl std">(</span><span class="hl num">3</span><span class="hl opt">/</span><span class="hl num">5</span><span class="hl std">,</span> <span class="hl num">2</span><span class="hl opt">/</span><span class="hl num">5</span><span class="hl std">,</span> <span class="hl kwc">r</span><span class="hl std">=</span><span class="hl num">.2</span><span class="hl std">,</span> <span class="hl kwc">gp</span><span class="hl std">=</span><span class="hl kwd">gpar</span><span class="hl std">(</span><span class="hl kwc">col</span><span class="hl std">=</span><span class="hl num">NA</span><span class="hl std">,</span> <span class="hl kwc">fill</span><span class="hl std">=</span><span class="hl num">2</span><span class="hl std">))</span>
-<span class="hl std">srcMasked</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">editGrob</span><span class="hl std">(src,</span> <span class="hl kwc">vp</span><span class="hl std">=</span><span class="hl kwd">viewport</span><span class="hl std">(</span><span class="hl kwc">mask</span><span class="hl std">=src))</span>
-<span class="hl std">srcGrouped</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">groupGrob</span><span class="hl std">(src)</span>
-<span class="hl std">dst</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">circleGrob</span><span class="hl std">(</span><span class="hl num">2</span><span class="hl opt">/</span><span class="hl num">5</span><span class="hl std">,</span> <span class="hl num">2</span><span class="hl opt">/</span><span class="hl num">5</span><span class="hl std">,</span> <span class="hl kwc">r</span><span class="hl std">=</span><span class="hl num">.2</span><span class="hl std">,</span> <span class="hl kwc">gp</span><span class="hl std">=</span><span class="hl kwd">gpar</span><span class="hl std">(</span><span class="hl kwc">col</span><span class="hl std">=</span><span class="hl num">NA</span><span class="hl std">,</span> <span class="hl kwc">fill</span><span class="hl std">=</span><span class="hl num">3</span><span class="hl std">))</span>
-</pre></div>
-</div></div>
-
-<div class="chunk" id="unnamed-chunk-70"><div class="rimage default"><img src="figure/unnamed-chunk-70-1.png" title="plot of chunk unnamed-chunk-70" alt="plot of chunk unnamed-chunk-70" class="plot" /></div></div>
-    <p>
-    The "clear" and "source" operators are special because they
-    produce different
-    results for different types of drawing.
-    The output below shows the same three drawing scenarios
-    on the three rows, but with the "clear" and "source" operators
-    in the columns.
-    In the top two rows, the mask is just the red circle.
-    For the "clear" operator, the
-    green circle is "clear"ed where the red circle overlaps it
-    (the red circle is not drawn itself).
-    For the "source" operator, the red circle replaces
-    anything on the surface below where the red circle is drawn,
-    including where it overlaps the green circle.
-    (The result in this case is the same as the "over" operator,
-    but it would be different if the red circle was semitransparent.)
-  </p>
-    <p>
-    The bottom row, which represents "paint"ing the source,
-    is different from the top two rows because the source is 
-    the same size as the surface (there is no mask).
-    With operator "clear", the green circle is "clear"ed completely
-    because the source clears the entire surface.
-    With operator "source", the green circle is replaced completely
-    because the source replaces the entire surface.
-  </p>
-<div class="chunk" id="unnamed-chunk-71"><div class="rimage default"><img src="figure/unnamed-chunk-71-1.png" title="plot of chunk unnamed-chunk-71" alt="plot of chunk unnamed-chunk-71" class="plot" /></div></div>
-    <p>
-    We can get the same result from "paint"ing the source as we do from
-    a "path" source or a "mask"ed source if we limit the area that the 
-    "paint" option draws,
-    either by applying a mask (in which case we change to "mask"ing the source)
-    or by setting a clipping region.
-    In the output below, 
-    the top row repeats the "paint"ed source from the previous
-    output and the source either "clear"s the green circle entirely
-    or the source replaces the green circle entirely.
-  </p>
-    <p>
-    In the second row, the source is a group with a viewport that imposes 
-    a mask (based on the red circle), 
-    so the source is "mask"ed rather than "paint"ed and the source
-    only clears or replaces the green circle where the red circle
-    overlaps it.
-  </p>
-    <p>
-    In the third row, the source is a group with a viewport that sets 
-    a clipping path (based on the red circle), so the source is still
-    "paint"ed, but the drawing is limited to just
-    the clipping region, so the green circle is only cleared or
-    replaced where the red circle overlaps it.
-  </p>
-<div class="chunk" id="unnamed-chunk-72"><div class="rcode"><div class="source"><pre class="knitr r"><span class="hl std">srcGroupMasked</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">editGrob</span><span class="hl std">(srcGrouped,</span> <span class="hl kwc">vp</span><span class="hl std">=</span><span class="hl kwd">viewport</span><span class="hl std">(</span><span class="hl kwc">mask</span><span class="hl std">=src))</span>
-<span class="hl std">srcGroupClipped</span> <span class="hl kwb">&lt;-</span> <span class="hl kwd">editGrob</span><span class="hl std">(srcGrouped,</span> <span class="hl kwc">vp</span><span class="hl std">=</span><span class="hl kwd">viewport</span><span class="hl std">(</span><span class="hl kwc">clip</span><span class="hl std">=src))</span>
-</pre></div>
-</div></div>
-
-<div class="chunk" id="unnamed-chunk-74"><div class="rimage default"><img src="figure/unnamed-chunk-74-1.png" title="plot of chunk unnamed-chunk-74" alt="plot of chunk unnamed-chunk-74" class="plot" /></div></div>
-    <p>
-    Unfortunately, the "mask"ed output above relies on a fix that did not quite
-    make the R 4.2.0 release, but the fix should be available in R 4.2.1.
-  </p>
     <hr>
     <p><a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img class="CC" alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png"></a><br><span xmlns:dct="http://purl.org/dc/terms/" property="dct:title">This document</span>
     by <span xmlns:cc="http://creativecommons.org/ns#" property="cc:attributionName">Paul
