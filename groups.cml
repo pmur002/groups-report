@@ -53,7 +53,7 @@ cat(format(Sys.Date(), "%A %d %B %Y"))
   <p class="date versionHistory">
     Version 1:  Original publication (Monday 15 November 2021).<br/>
     Version 2:  Removed "Accumulating transformations"; added "The vp argument"; added "Appendix" (Monday 30 May 2022).<br/>
-    Version 3:  Update <a href="https://www.stat.auckland.ac.nz/~paul/Reports/GraphicsEngine/compositing/compositing.html">behaviour of Porter-Duff compositing operators</a>; removed "Appendix".
+    Version 3:  Update <a href="https://www.stat.auckland.ac.nz/~paul/Reports/GraphicsEngine/compositing/compositing.html">behaviour of Porter-Duff compositing operators</a>; <code>quartz()</code> support added; removed "Appendix".
   </p>
 
   <rcode id="init" echo="FALSE" message="FALSE" results="hide">
@@ -106,7 +106,9 @@ options(bitmapType="cairo")
     These new graphics features have not (yet) been implemented for
     all of the graphics devices provided by the 'grDevices'
     package. Devices that do support the new features are the 
-    <code>pdf()</code> graphics device and Cairo graphics devices:
+    <code>pdf()</code> graphics device, 
+    the <code>quartz()</code> graphics device (from R 4.3.0), 
+    and Cairo graphics devices:
     <code>x11(type="cairo")</code>, <code>cairo_pdf()</code>,
     <code>cairo_ps()</code>, <code>png(type="cairo")</code>,
     <code>jpeg(type="cairo")</code>, <code>tiff(type="cairo")</code>, 
@@ -1706,7 +1708,9 @@ grid.edit("group", src=srcMod)
   <h3>Exemplars</h3>
   <p>
     Support for these new features has been implemented for the
-    <code>pdf()</code> device and the devices that are based on Cairo
+    <code>pdf()</code> device, the 
+    <code>quartz()</code> device (from R 4.3.0),
+    and the devices that are based on Cairo
     graphics, so the code for those devices demonstrates some
     possible approaches to implementation.
     In both of these cases, the infrastructure that was previously
@@ -1880,14 +1884,14 @@ grid.edit("group", src=srcMod)
       contains code for the other transformations and coordinates
       everything.  
       These materials are also available
-      on <a href="https://github.com/pmur002/groups-report/releases/tag/v2">github</a>.
+      on <a href="https://github.com/pmur002/groups-report/releases/tag/v3">github</a>.
     </li>
     <li>
       This report was generated within a 
       <a href="https://www.docker.com/">Docker</a> container.
       The Docker command to build the report is included in the Makefile above.
       The Docker image for the container is available from
-      <a href="https://hub.docker.com/r/pmur002/groups-report/">Docker Hub</a>;
+      <a href="https://hub.docker.com/r/pmur002/groups-report:v3/">Docker Hub</a>;
       alternatively, the image can be rebuilt from its 
       <a href="Dockerfile">Dockerfile</a>.
     </li>
@@ -1896,7 +1900,7 @@ grid.edit("group", src=srcMod)
   <h2>How to cite this report</h2>
   <p>
     Murrell, P. (2021). "Groups, Compositing Operators, and Affine Transformations in R Graphics" 
-    Technical Report 2021-02, Version 2, Department of Statistics, The University of Auckland. 
+    Technical Report 2021-02, Version 3, Department of Statistics, The University of Auckland. 
     Version 1.
     [ <a href="how-to-cite.bib">bib</a> |
       <a href="http://dx.doi.org/10.17608/k6.auckland.17009120">DOI</a> | 
